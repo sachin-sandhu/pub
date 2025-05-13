@@ -10,4 +10,4 @@ dependencies:
   http: "0.13.2" # < 0.13.3 has a security vulnerability: https://github.com/advisories/GHSA-4rgh-jx4f-qfcq
 
 dev_dependencies:
-  test: ^1.16.5
+  test: ^1.24.3
