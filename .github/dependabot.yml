@@ -10,3 +10,5 @@ updates:
     schedule:
       interval: "cron"
       cronjob: "0 16 * * 3,5"
+    cooldown:
+      default-days: 90
