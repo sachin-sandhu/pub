@@ -34,7 +34,7 @@ jobs:
                   directory = '/' + directory
               
               if directory == '/':
-                  return '/'
+                  return '/*.*'
 
               if directory.endswith('/'):
                   directory = directory.rstrip('/')
