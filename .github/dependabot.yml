@@ -27,7 +27,7 @@ updates:
       - "@typescript-eslint/*"
   reviewers: 
     - "sachin-sandhu"
-    - "@octo-org/octocats"
+    - "kbukum1"
 - package-ecosystem: "pub"
   directory: "/2"
   schedule:
