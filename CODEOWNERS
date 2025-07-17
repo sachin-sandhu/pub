@@ -3,7 +3,9 @@
 
 # Dependabot reviewers (auto-generated from .github/dependabot.yml)
 /* @thavaahariharangit
-/1/ @sachin-sandhu
+/1/backend/ @sachin-sandhu @kbukum1
+/1/frontend/ @sachin-sandhu @kbukum1
+/1/lib-*/ @sachin-sandhu @kbukum1
 /2/ @randhircs
 /3/ @markhallen
 /4/ @kbukum1
