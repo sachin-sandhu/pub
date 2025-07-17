@@ -1,4 +1,4 @@
-name: Sync Dependabot Reviewers to CODEOWNERS
+name: Migrate Dependabot Reviewers to CODEOWNERS
 
 on:
   workflow_dispatch:
@@ -24,50 +24,37 @@ jobs:
           import yaml
           import sys
 
-          def normalize_directory_pattern(directory):
+          def codeowners_directory_pattern(directory):
               """
-              Convert dependabot directory paths to proper CODEOWNERS patterns
-              Based on CODEOWNERS syntax rules and examples
+              Convert dependabot directory paths to CODEOWNERS patterns.
               """
-              # Remove leading/trailing whitespace
               directory = directory.strip()
               
-              # Ensure it starts with /
               if not directory.startswith('/'):
                   directory = '/' + directory
-              
-              # Handle special cases
-              if directory == '/':
-                  # Root directory - match everything at root level with /*
-                  return '/*'
-              
-              # For specific directories, we want to match the directory and all its contents
-              # Remove trailing slash first
+
               if directory.endswith('/'):
                   directory = directory.rstrip('/')
               
-              # Add trailing slash to match directory contents
-              # This follows CODEOWNERS pattern: /scripts/ matches /scripts directory and all its contents
-              return f"{directory}/"
+              # CODEOWNERS patterns need '/' to work correctly
+              return f"{directory}"
 
           def main():
               try:
-                  # Read dependabot.yml file
-                  dependabot_path = '.github/dependabot.yml'
-                  if not os.path.exists(dependabot_path):
-                      print('dependabot.yml file not found')
+
+                  file_path = '.github/dependabot.yml'
+                  if not os.path.exists(file_path):
+                      print('dependabot.yml file not found!')
                       return False
 
-                  with open(dependabot_path, 'r') as f:
+                  with open(file_path, 'r') as f:
                       dependabot_config = yaml.safe_load(f)
 
-                  # Extract reviewers with their associated directories
                   directory_reviewers = []
                   
                   if 'updates' in dependabot_config:
                       for update in dependabot_config['updates']:
                           if 'reviewers' in update:
-                              # Handle both single directory and multiple directories
                               directories = []
                               if 'directory' in update:
                                   directories = [update['directory']]
@@ -75,61 +62,54 @@ jobs:
                                   directories = update['directories']
                               
                               for directory in directories:
-                                  # Normalize directory path and convert to proper CODEOWNERS pattern
-                                  normalized_dir = normalize_directory_pattern(directory)
+                                  normalized_dir = codeowners_directory_pattern(directory)
                                   
-                                  reviewers_for_dir = []
+                                  dir_reviewers = []
                                   for reviewer in update['reviewers']:
-                                      # Handle both string and object formats
+
                                       if isinstance(reviewer, str):
-                                          reviewers_for_dir.append(reviewer)
+                                          dir_reviewers.append(reviewer)
                                       elif isinstance(reviewer, dict) and 'username' in reviewer:
-                                          reviewers_for_dir.append(reviewer['username'])
+                                          dir_reviewers.append(reviewer['username'])
                                   
-                                  if reviewers_for_dir:
+                                  if dir_reviewers:
                                       directory_reviewers.append({
                                           'directory': normalized_dir,
-                                          'reviewers': reviewers_for_dir
+                                          'reviewers': dir_reviewers
                                       })
 
                   if len(directory_reviewers) == 0:
-                      print('No reviewers found in dependabot.yml')
+                      print('Reviewers missing in dependabot.yml!')
                       return False
 
-                  print(f'Found directory reviewers: {directory_reviewers}')
+                  print(f'Directory reviewers list: {directory_reviewers}')
 
-                  # Read existing CODEOWNERS file or create new content
-                  codeowners_path = 'CODEOWNERS'
+                  codeowners_file_path = 'CODEOWNERS'
                   codeowners_content = ''
                   has_changes = False
 
-                  if os.path.exists(codeowners_path):
-                      with open(codeowners_path, 'r') as f:
+                  if os.path.exists(codeowners_file_path):
+                      with open(codeowners_file_path, 'r') as f:
                           codeowners_content = f.read()
 
-                  # Check if we need to add/update the dependabot section
-                  dependabot_section = '# Dependabot reviewers (auto-generated from .github/dependabot.yml)'
+                  # We need this to ensure the section is added correctly for new as well as existing
+                  dependabot_section = '# Dependabot reviewers (migrated from .github/dependabot.yml)'
                   
-                  # Create lines for each directory and its reviewers
                   new_reviewers_lines = []
                   for dir_config in directory_reviewers:
                       directory = dir_config['directory']
                       reviewers = dir_config['reviewers']
                       
-                      # Format reviewers
                       formatted_reviewers = []
                       for reviewer in reviewers:
                           formatted_reviewer = reviewer if reviewer.startswith('@') else '@' + reviewer
                           formatted_reviewers.append(formatted_reviewer)
                       
-                      # Create CODEOWNERS line: directory followed by reviewers
                       line = f"{directory} {' '.join(formatted_reviewers)}"
                       new_reviewers_lines.append(line)
                   
-                  # Sort lines to put root directory patterns (/*) at the top
-                  # This follows CODEOWNERS best practice: general patterns before specific ones
                   def sort_codeowners_lines(line):
-                      # Root patterns (/*) get priority 0, specific directories get priority 1
+                      # Root patterns needs to be at top
                       return (0 if line.startswith('/* ') else 1, line)
                   
                   new_reviewers_lines.sort(key=sort_codeowners_lines)
@@ -152,26 +132,22 @@ jobs:
                       
                       end_index = next_section_index if next_section_index >= 0 else len(lines)
                       
-                      # Get current reviewers lines (look for directory patterns)
                       current_reviewers_lines = []
                       for i in range(dependabot_section_index + 1, end_index):
                           if i < len(lines):
                               line = lines[i].strip()
-                              # Match CODEOWNERS patterns: starts with /, contains @, or legacy * @ format
                               if (line.startswith('/') and '@' in line) or line.startswith('* @'):
                                   current_reviewers_lines.append(lines[i])
                       
                       # Check if reviewers need updating
                       if current_reviewers_lines != new_reviewers_lines:
-                          # Remove old reviewers lines (look for directory patterns)
                           for i in range(end_index - 1, dependabot_section_index, -1):
                               if i < len(lines):
                                   line = lines[i].strip()
-                                  # Match CODEOWNERS patterns: starts with /, contains @, or legacy * @ format
+
                                   if (line.startswith('/') and '@' in line) or line.startswith('* @'):
                                       lines.pop(i)
                           
-                          # Insert new reviewers lines
                           for i, line in enumerate(new_reviewers_lines):
                               lines.insert(dependabot_section_index + 1 + i, line)
                           
@@ -190,12 +166,12 @@ jobs:
                       # Ensure the file ends with a newline character (EOL)
                       if not new_content.endswith('\n'):
                           new_content += '\n'
-                      with open(codeowners_path, 'w') as f:
+                      with open(codeowners_file_path, 'w') as f:
                           f.write(new_content)
-                      print('CODEOWNERS file updated')
+                      print('CODEOWNERS file updated with dependabot reviewers')
                       return True
                   else:
-                      print('No changes needed to CODEOWNERS file')
+                      print('No changes were made to CODEOWNERS file')
                       return False
 
               except Exception as error:
@@ -204,7 +180,6 @@ jobs:
                   traceback.print_exc()
                   sys.exit(1)
 
-          # Run main function and set outputs
           if main():
               print('has_changes=true')
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
@@ -222,17 +197,14 @@ jobs:
           commit-message: 'chore: sync dependabot reviewers to CODEOWNERS'
           title: 'Sync Dependabot Reviewers to CODEOWNERS'
           body: |
-            This PR automatically syncs the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
+            This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
             
-            ### Changes
-            - Updated `CODEOWNERS` file with directory-specific reviewers from dependabot configuration
+            - Updated `CODEOWNERS` file with reviewers from dependabot.yml file configuration
             - Each directory path is paired with its corresponding reviewers
-            
-            This ensures that the same people who review dependabot PRs for specific directories are also set as code owners for those directories.
-            
+
             ---
-            *This PR was created automatically by the `sync-dependabot-reviewers` workflow.*
-          branch: sync-dependabot-reviewers
+            *Created automatically by the `migrate-dependabot-reviewers` workflow.*
+          branch: migrate-dependabot-reviewers
           delete-branch: true
           draft: false
 
