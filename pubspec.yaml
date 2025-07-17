@@ -1,26 +1,13 @@
-name: example_project
-description: A new Flutter project.
-
-# The following defines the version and build number for your application.
-version: 1.0.0+1
-
+name: dependabot_testcase
 environment:
-  sdk: ">=3.0.0 <4.0.0"
-
+  sdk: '>=2.12.0 <3.0.0'
 dependencies:
-  flutter:
-    sdk: flutter
-  cupertino_icons: ^1.0.2
-  http: ^1.1.0
+  collection: ^1.14.13 # Locked to 1.14.13, can update with no unlock.
+  retry: ^2.0.0 # Can update with updated constraint, no further constraints.
+  protobuf: 1.1.4 # Can update with updated constraint, only together with fixnum.
+  fixnum: 0.10.11
+  path: 1.8.1 # Already at latest
+  http: "0.13.2" # 0.13.3 has a security vulnerability: <https://github.com/advisories/GHSA-4rgh-jx4f-qfcq
 
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^3.0.0
-
-flutter:
-  uses-material-design: true
-
-  assets:
-    - assets/images/
-    - assets/data/
+  test: ^1.16.5
