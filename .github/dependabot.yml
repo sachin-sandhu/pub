@@ -72,3 +72,15 @@ updates:
       - "@typescript-eslint/*"
   reviewers: 
     - "robaiken"
+- package-ecosystem: "pub"
+  directory: "/5"
+  schedule:
+    interval: "cron"
+    cronjob: "0 8 * * 2,7"
+  open-pull-requests-limit: 10
+  groups:
+    typescript-eslint:
+      patterns:
+      - "@typescript-eslint/*"
+  reviewers: 
+    - "thavaahariharangit"
