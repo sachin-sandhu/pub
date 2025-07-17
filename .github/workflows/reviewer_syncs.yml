@@ -126,6 +126,14 @@ jobs:
                       line = f"{directory} {' '.join(formatted_reviewers)}"
                       new_reviewers_lines.append(line)
                   
+                  # Sort lines to put root directory patterns (/*) at the top
+                  # This follows CODEOWNERS best practice: general patterns before specific ones
+                  def sort_codeowners_lines(line):
+                      # Root patterns (/*) get priority 0, specific directories get priority 1
+                      return (0 if line.startswith('/* ') else 1, line)
+                  
+                  new_reviewers_lines.sort(key=sort_codeowners_lines)
+                  
                   lines = codeowners_content.split('\n')
                   dependabot_section_index = -1
                   
