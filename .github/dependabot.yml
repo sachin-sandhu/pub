@@ -73,7 +73,7 @@ updates:
   reviewers: 
     - "robaiken"
 - package-ecosystem: "pub"
-  directory: "/5"
+  directory: "/6"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
