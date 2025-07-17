@@ -15,7 +15,7 @@ updates:
 - package-ecosystem: "pub"
   directories:
     - "/1/frontend"
-    - "/1/backend/"
+    - "/2/backend/"
     - "/1/lib-*"
     - "**/*"
   schedule:
