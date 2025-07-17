@@ -36,12 +36,9 @@ jobs:
               if directory == '/':
                   return '/*.*'
               
-              # CODEOWNERS patterns need '/' to work correctly
               return f"{directory}"
-
           def main():
               try:
-
                   file_path = '.github/dependabot.yml'
                   if not os.path.exists(file_path):
                       print('dependabot.yml file not found!')
@@ -51,7 +48,6 @@ jobs:
                       dependabot_config = yaml.safe_load(f)
 
                   directory_reviewers = []
-                  
                   if 'updates' in dependabot_config:
                       for update in dependabot_config['updates']:
                           if 'reviewers' in update:
