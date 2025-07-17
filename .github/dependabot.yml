@@ -10,3 +10,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
+  reviewers: 
+    - "sachin-sandhu"
+    - "randhircs"
