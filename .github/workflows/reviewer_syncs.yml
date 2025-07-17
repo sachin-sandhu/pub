@@ -193,7 +193,7 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: migrate dependabot reviewers to CODEOWNERS'
+          commit-message: 'migrate dependabot reviewers to CODEOWNERS'
           title: 'Migrate Dependabot Reviewers to CODEOWNERS'
           body: |
             This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
