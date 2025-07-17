@@ -13,7 +13,7 @@ updates:
   reviewers: 
     - "abhishekbhaskar"
 - package-ecosystem: "pub"
-  directory: "/2"
+  directory: "/1"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
@@ -25,7 +25,7 @@ updates:
   reviewers: 
     - "sachin-sandhu"
 - package-ecosystem: "pub"
-  directory: "/3"
+  directory: "/2"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
