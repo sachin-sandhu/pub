@@ -13,7 +13,10 @@ updates:
   reviewers: 
     - "abhishekbhaskar"
 - package-ecosystem: "pub"
-  directory: "/1"
+  directories:
+    - "/1/frontend"
+    - "/2/backend"
+    - "/3/admin"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
