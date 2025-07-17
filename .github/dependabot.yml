@@ -15,8 +15,8 @@ updates:
 - package-ecosystem: "pub"
   directories:
     - "/1/frontend"
-    - "/2/backend"
-    - "/3/admin"
+    - "/1/backend"
+    - "/1/admin"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
