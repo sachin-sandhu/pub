@@ -10,8 +10,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "abhishekbhaskar"
 - package-ecosystem: "pub"
   directory: "/1"
   schedule:
@@ -22,8 +20,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "sachin-sandhu"
 - package-ecosystem: "pub"
   directory: "/2"
   schedule:
@@ -34,8 +30,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "randhircs"
 - package-ecosystem: "pub"
   directory: "/3"
   schedule:
@@ -46,8 +40,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "markhallen"
 - package-ecosystem: "pub"
   directory: "/4"
   schedule:
@@ -58,8 +50,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "kbukum1"
 - package-ecosystem: "pub"
   directory: "/5"
   schedule:
@@ -70,8 +60,6 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "robaiken"
 - package-ecosystem: "pub"
   directory: "/6"
   schedule:
@@ -82,5 +70,3 @@ updates:
     typescript-eslint:
       patterns:
       - "@typescript-eslint/*"
-  reviewers: 
-    - "thavaahariharangit"
