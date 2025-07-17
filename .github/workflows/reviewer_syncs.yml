@@ -32,6 +32,9 @@ jobs:
               
               if not directory.startswith('/'):
                   directory = '/' + directory
+              
+              if directory == '/':
+                  return '/'
 
               if directory.endswith('/'):
                   directory = directory.rstrip('/')
