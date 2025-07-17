@@ -11,5 +11,5 @@ updates:
       patterns:
       - "@typescript-eslint/*"
   reviewers: 
-    - "sachin-sandhu"
     - "randhircs"
+    - "sachin-sandhu"
