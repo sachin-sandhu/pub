@@ -29,65 +29,30 @@ jobs:
               Get manifest file patterns for each package ecosystem.
               Handles both specific files and glob patterns correctly for CODEOWNERS.
               """
-              # Mapping of ecosystems to their manifest files
-              # Based on: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#package-ecosystem-
+              # Mapping of ecosystems to their manifest files https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#package-ecosystem-
               ecosystem_manifests = {
-                  # Ruby ecosystem
                   'bundler': ['Gemfile', 'Gemfile.lock', '*.gemspec'],
-                  
-                  # JavaScript/Node.js ecosystems  
                   'bun': ['package.json', 'bun.lockb'],
                   'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
-                  'npm_and_yarn': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
-
-                  # Rust ecosystem
                   'cargo': ['Cargo.toml', 'Cargo.lock'],
-                  
-                  # PHP ecosystem
                   'composer': ['composer.json', 'composer.lock'],
-                  
-                  # Container ecosystems
                   'devcontainers': ['.devcontainer/devcontainer.json', '.devcontainer.json'],
                   'docker': ['Dockerfile', 'Dockerfile.*', '*.dockerfile'],
                   'docker-compose': ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml'],
-                  
-                  # .NET ecosystem
                   'dotnet-sdk': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'global.json'],
                   'nuget': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'Directory.Build.props', 'Directory.Packages.props'],
-                  
-                  # Elm ecosystem
                   'elm': ['elm.json'],
-                  
-                  # GitHub Actions
                   'github-actions': ['.github/workflows/*.yml', '.github/workflows/*.yaml', 'action.yml', 'action.yaml'],
-                  
-                  # Git submodules
                   'gitsubmodule': ['.gitmodules'],
-                  
-                  # Go ecosystem
                   'gomod': ['go.mod', 'go.sum'],
-                  
-                  # Java/JVM ecosystems
                   'gradle': ['build.gradle', 'build.gradle.kts', 'gradle.properties', 'settings.gradle', 'settings.gradle.kts'],
                   'maven': ['pom.xml', '*.pom'],
-                  
-                  # Kubernetes/Helm
                   'helm': ['Chart.yaml', 'Chart.yml', 'values.yaml', 'values.yml'],
-                  
-                  # Elixir ecosystem (hex is the package manager, mix is the build tool)
                   'mix': ['mix.exs', 'mix.lock'],
-                  
-                  # Python ecosystems
                   'pip': ['requirements.txt', 'requirements/*.txt', 'setup.py', 'setup.cfg', 'pyproject.toml', 'Pipfile', 'Pipfile.lock'],
                   'uv': ['pyproject.toml', 'uv.lock'],
-                  
-                  # Dart/Flutter ecosystem
                   'pub': ['pubspec.yaml', 'pubspec.yml', 'pubspec.lock'],
-                  
-                  # Swift ecosystem
                   'swift': ['Package.swift', 'Package.resolved'],
-                  
-                  # Terraform
                   'terraform': ['*.tf', '*.tfvars', '*.hcl']
               }
               
@@ -114,7 +79,7 @@ jobs:
                               pattern = f"/{manifest}"
                               if not manifest.startswith('**/'):
                                   patterns.append(f"/**/{manifest}")  # Recursive pattern
-                              patterns.append(pattern)  # Root pattern
+                              patterns.append(pattern)
                           else:
                               # Specific file
                               pattern = f"/{manifest}"
@@ -122,14 +87,11 @@ jobs:
                       else:
                           # Specific directory patterns
                           if '*' in manifest or '?' in manifest:
-                              # Glob pattern within specific directory
                               pattern = f"{directory}/{manifest}"
                               patterns.append(pattern)
-                              # Also add recursive pattern for subdirectories
                               if not manifest.startswith('**/'):
                                   patterns.append(f"{directory}/**/{manifest}")
                           else:
-                              # Specific file in specific directory
                               pattern = f"{directory}/{manifest}"
                               patterns.append(pattern)
                   else:
@@ -139,13 +101,11 @@ jobs:
                           pattern = f"/{manifest}"
                           patterns.append(pattern)
                           if not manifest.startswith('**/'):
-                              patterns.append(f"/**/{manifest}")  # Recursive
+                              patterns.append(f"/**/{manifest}")
                       else:
-                          # Specific file
                           pattern = f"/{manifest}"
                           patterns.append(pattern)
               
-              # Remove duplicates while preserving order
               seen = set()
               unique_patterns = []
               for pattern in patterns:
@@ -231,26 +191,21 @@ jobs:
                       - Root patterns before nested patterns
                       - Shorter paths before longer paths
                       """
-                      # Extract the file pattern (first part before reviewers)
+
                       parts = line.strip().split()
                       if not parts:
                           return (999, line)
                       
                       pattern = parts[0]
                       
-                      # Count wildcards (fewer wildcards = more specific)
                       wildcard_count = pattern.count('*') + pattern.count('?')
                       
-                      # Count path depth (fewer slashes = higher priority)
                       path_depth = pattern.count('/')
                       
-                      # Specific file extensions get priority over generic patterns
                       has_extension = '.' in pattern.split('/')[-1] if '/' in pattern else '.' in pattern
                       
-                      # Root patterns get higher priority
                       is_root_pattern = pattern.startswith('/*') and not pattern.startswith('/**')
                       
-                      # Return tuple for sorting (lower values = higher priority)
                       return (
                           0 if is_root_pattern else 1,  # Root patterns first
                           wildcard_count,               # Fewer wildcards first
@@ -300,7 +255,6 @@ jobs:
                           
                           has_changes = True
                   else:
-                      # Add new section at the end
                       if codeowners_content.strip() != '':
                           lines.append('')
                       lines.append(dependabot_section)
@@ -344,29 +298,8 @@ jobs:
           title: 'Migrate Dependabot Reviewers to CODEOWNERS'
           body: |
             This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
-            
+
             - Updated `CODEOWNERS` file with `reviewers` from `dependabot.yml` file configuration
-            - Added permissions for specific manifest files based on package ecosystems with proper glob pattern support:
-              - **bundler**: Gemfile, Gemfile.lock, *.gemspec (with recursive patterns)
-              - **npm**: package.json, package-lock.json, npm-shrinkwrap.json, yarn.lock, pnpm-lock.yaml (with recursive patterns)
-              - **cargo**: Cargo.toml, Cargo.lock  
-              - **composer**: composer.json, composer.lock
-              - **docker**: Dockerfile, Dockerfile.*, *.dockerfile (with recursive patterns)
-              - **pip**: requirements.txt, requirements/*.txt, setup.py, pyproject.toml, Pipfile (with recursive patterns)
-              - **dotnet-sdk & nuget**: *.csproj, *.fsproj, *.vbproj, *.sln, packages.config, global.json (with recursive patterns)
-              - **mix** (Elixir): mix.exs, mix.lock (corrected from duplicate hex/mix entries)
-              - **And 15+ other officially supported ecosystems with their respective manifest files**
-            
-            #### Pattern Types Generated:
-            - **Specific files**: `/path/to/specific.file` (exact file matches)
-            - **Glob patterns**: `/path/*.extension` (wildcard file matches in directory)
-            - **Recursive patterns**: `/path/**/*.extension` (wildcard matches in subdirectories)
-            
-            #### Precedence Rules:
-            - Root directory patterns have highest priority
-            - Specific files take precedence over glob patterns
-            - Directory-scoped patterns come before recursive patterns
-            - Proper CODEOWNERS ordering ensures correct ownership resolution
 
             ---
             *Created automatically by the `migrate-dependabot-reviewers` workflow.*
@@ -379,5 +312,5 @@ jobs:
           if [ "${{ steps.sync.outputs.has_changes }}" = "true" ]; then
             echo "CODEOWNERS file has been updated and PR created"
           else
-            echo "No changes needed - CODEOWNERS is already up to date"
+            echo "CODEOWNERS is already up to date"
           fi
