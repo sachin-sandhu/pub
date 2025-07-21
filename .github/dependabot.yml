@@ -41,7 +41,7 @@ updates:
   reviewers: 
     - "randhircs"
 - package-ecosystem: "dotnet-sdk"
-  directory: "/3/"
+  directory: "/3"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
