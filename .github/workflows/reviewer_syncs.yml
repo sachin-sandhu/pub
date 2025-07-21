@@ -24,19 +24,56 @@ jobs:
           import yaml
           import sys
 
-          def codeowners_directory_pattern(directory):
+          def get_manifest_files_for_ecosystem(ecosystem, directory):
               """
-              Convert dependabot directory paths to CODEOWNERS patterns.
+              Get manifest file patterns for each package ecosystem.
               """
-              directory = directory.strip()
+              # Mapping of ecosystems to their manifest files
+              ecosystem_manifests = {
+                  'bundler': ['Gemfile', 'Gemfile.lock', '*.gemspec'],
+                  'bun': ['package.json', 'bun.lockb'],
+                  'cargo': ['Cargo.toml', 'Cargo.lock'],
+                  'composer': ['composer.json', 'composer.lock'],
+                  'devcontainers': ['.devcontainer/devcontainer.json', '.devcontainer.json'],
+                  'docker': ['Dockerfile', 'Dockerfile.*', '*.dockerfile'],
+                  'docker-compose': ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml'],
+                  'dotnet-sdk': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'global.json'],
+                  'elm': ['elm.json'],
+                  'github-actions': ['.github/workflows/*.yml', '.github/workflows/*.yaml', 'action.yml', 'action.yaml'],
+                  'gitsubmodule': ['.gitmodules'],
+                  'gomod': ['go.mod', 'go.sum'],
+                  'gradle': ['build.gradle', 'build.gradle.kts', 'gradle.properties', 'settings.gradle', 'settings.gradle.kts'],
+                  'helm': ['Chart.yaml', 'Chart.yml', 'values.yaml', 'values.yml'],
+                  'hex': ['mix.exs', 'mix.lock'],
+                  'mix': ['mix.exs', 'mix.lock'],
+                  'maven': ['pom.xml', '*.pom'],
+                  'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json'],
+                  'nuget': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'Directory.Build.props', 'Directory.Packages.props'],
+                  'pip': ['requirements.txt', 'requirements/*.txt', 'setup.py', 'setup.cfg', 'pyproject.toml', 'Pipfile', 'Pipfile.lock'],
+                  'pub': ['pubspec.yaml', 'pubspec.yml', 'pubspec.lock'],
+                  'swift': ['Package.swift', 'Package.resolved'],
+                  'terraform': ['*.tf', '*.tfvars', '*.hcl'],
+                  'uv': ['pyproject.toml', 'uv.lock']
+              }
               
+              directory = directory.strip()
               if not directory.startswith('/'):
                   directory = '/' + directory
               
               if directory == '/':
-                  return '/*.*'
+                  directory = ''
               
-              return f"{directory}"
+              manifest_files = ecosystem_manifests.get(ecosystem, [])
+              patterns = []
+              
+              for manifest in manifest_files:
+                  if directory:
+                      pattern = f"{directory}/{manifest}"
+                  else:
+                      pattern = f"/{manifest}"
+                  patterns.append(pattern)
+              
+              return patterns
           def main():
               try:
                   file_path = '.github/dependabot.yml'
@@ -50,7 +87,8 @@ jobs:
                   directory_reviewers = []
                   if 'updates' in dependabot_config:
                       for update in dependabot_config['updates']:
-                          if 'reviewers' in update:
+                          if 'reviewers' in update and 'package-ecosystem' in update:
+                              ecosystem = update['package-ecosystem']
                               directories = []
                               if 'directory' in update:
                                   directories = [update['directory']]
@@ -58,7 +96,7 @@ jobs:
                                   directories = update['directories']
                               
                               for directory in directories:
-                                  normalized_dir = codeowners_directory_pattern(directory)
+                                  manifest_patterns = get_manifest_files_for_ecosystem(ecosystem, directory)
                                   
                                   dir_reviewers = []
                                   for reviewer in update['reviewers']:
@@ -68,14 +106,16 @@ jobs:
                                       elif isinstance(reviewer, dict) and 'username' in reviewer:
                                           dir_reviewers.append(reviewer['username'])
                                   
-                                  if dir_reviewers:
-                                      directory_reviewers.append({
-                                          'directory': normalized_dir,
-                                          'reviewers': dir_reviewers
-                                      })
+                                  if dir_reviewers and manifest_patterns:
+                                      print(f'Processing ecosystem: {ecosystem}, directory: {directory}, manifest files: {manifest_patterns}')
+                                      for pattern in manifest_patterns:
+                                          directory_reviewers.append({
+                                              'directory': pattern,
+                                              'reviewers': dir_reviewers
+                                          })
 
                   if len(directory_reviewers) == 0:
-                      print('Reviewers missing in dependabot.yml!')
+                      print('No reviewers found for any supported package ecosystems in dependabot.yml!')
                       return False
 
                   print(f'Directory reviewers list: {directory_reviewers}')
@@ -93,7 +133,7 @@ jobs:
                   
                   new_reviewers_lines = []
                   for dir_config in directory_reviewers:
-                      directory = dir_config['directory']
+                      manifest_pattern = dir_config['directory']
                       reviewers = dir_config['reviewers']
                       
                       formatted_reviewers = []
@@ -101,7 +141,7 @@ jobs:
                           formatted_reviewer = reviewer if reviewer.startswith('@') else '@' + reviewer
                           formatted_reviewers.append(formatted_reviewer)
                       
-                      line = f"{directory} {' '.join(formatted_reviewers)}"
+                      line = f"{manifest_pattern} {' '.join(formatted_reviewers)}"
                       new_reviewers_lines.append(line)
                   
                   def sort_codeowners_lines(line):
