@@ -32,9 +32,9 @@
 /3/*.fsproj @markhallen
 /3/*.sln @markhallen
 /3/*.vbproj @markhallen
-/1/lib-*/pubspec.lock @sachin-sandhu @kbukum1
-/1/lib-*/pubspec.yaml @sachin-sandhu @kbukum1
-/1/lib-*/pubspec.yml @sachin-sandhu @kbukum1
+/1/libs-*/pubspec.lock @sachin-sandhu @kbukum1
+/1/libs-*/pubspec.yaml @sachin-sandhu @kbukum1
+/1/libs-*/pubspec.yml @sachin-sandhu @kbukum1
 /3/**/*.csproj @markhallen
 /3/**/*.fsproj @markhallen
 /3/**/*.sln @markhallen
