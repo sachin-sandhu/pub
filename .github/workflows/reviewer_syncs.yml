@@ -38,7 +38,8 @@ jobs:
                   # JavaScript/Node.js ecosystems  
                   'bun': ['package.json', 'bun.lockb'],
                   'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
-                  
+                  'npm_and_yarn': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
+
                   # Rust ecosystem
                   'cargo': ['Cargo.toml', 'Cargo.lock'],
                   
