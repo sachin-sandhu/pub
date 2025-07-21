@@ -27,6 +27,7 @@ jobs:
           def get_manifest_files_for_ecosystem(ecosystem, directory):
               """
               Get manifest file patterns for each package ecosystem.
+              Handles both specific files and glob patterns correctly for CODEOWNERS.
               """
               # Mapping of ecosystems to their manifest files
               ecosystem_manifests = {
@@ -70,13 +71,55 @@ jobs:
               patterns = []
               
               for manifest in manifest_files:
+                  # Handle different pattern types for CODEOWNERS
                   if directory:
-                      pattern = f"{directory}/{manifest}"
+                      if directory == '/':
+                          # Root directory patterns
+                          if '*' in manifest or '?' in manifest:
+                              # Glob pattern - ensure it matches files in root and subdirectories
+                              pattern = f"/{manifest}"
+                              if not manifest.startswith('**/'):
+                                  patterns.append(f"/**/{manifest}")  # Recursive pattern
+                              patterns.append(pattern)  # Root pattern
+                          else:
+                              # Specific file
+                              pattern = f"/{manifest}"
+                              patterns.append(pattern)
+                      else:
+                          # Specific directory patterns
+                          if '*' in manifest or '?' in manifest:
+                              # Glob pattern within specific directory
+                              pattern = f"{directory}/{manifest}"
+                              patterns.append(pattern)
+                              # Also add recursive pattern for subdirectories
+                              if not manifest.startswith('**/'):
+                                  patterns.append(f"{directory}/**/{manifest}")
+                          else:
+                              # Specific file in specific directory
+                              pattern = f"{directory}/{manifest}"
+                              patterns.append(pattern)
                   else:
-                      pattern = f"/{manifest}"
-                  patterns.append(pattern)
+                      # Root directory case
+                      if '*' in manifest or '?' in manifest:
+                          # Glob pattern
+                          pattern = f"/{manifest}"
+                          patterns.append(pattern)
+                          if not manifest.startswith('**/'):
+                              patterns.append(f"/**/{manifest}")  # Recursive
+                      else:
+                          # Specific file
+                          pattern = f"/{manifest}"
+                          patterns.append(pattern)
               
-              return patterns
+              # Remove duplicates while preserving order
+              seen = set()
+              unique_patterns = []
+              for pattern in patterns:
+                  if pattern not in seen:
+                      seen.add(pattern)
+                      unique_patterns.append(pattern)
+              
+              return unique_patterns
           def main():
               try:
                   file_path = '.github/dependabot.yml'
@@ -148,8 +191,39 @@ jobs:
                       new_reviewers_lines.append(line)
                   
                   def sort_codeowners_lines(line):
-                      # Root patterns needs to be at top
-                      return (0 if line.startswith('/* ') else 1, line)
+                      """
+                      Sort CODEOWNERS lines for proper precedence.
+                      - Specific files before glob patterns
+                      - Root patterns before nested patterns
+                      - Shorter paths before longer paths
+                      """
+                      # Extract the file pattern (first part before reviewers)
+                      parts = line.strip().split()
+                      if not parts:
+                          return (999, line)
+                      
+                      pattern = parts[0]
+                      
+                      # Count wildcards (fewer wildcards = more specific)
+                      wildcard_count = pattern.count('*') + pattern.count('?')
+                      
+                      # Count path depth (fewer slashes = higher priority)
+                      path_depth = pattern.count('/')
+                      
+                      # Specific file extensions get priority over generic patterns
+                      has_extension = '.' in pattern.split('/')[-1] if '/' in pattern else '.' in pattern
+                      
+                      # Root patterns get higher priority
+                      is_root_pattern = pattern.startswith('/*') and not pattern.startswith('/**')
+                      
+                      # Return tuple for sorting (lower values = higher priority)
+                      return (
+                          0 if is_root_pattern else 1,  # Root patterns first
+                          wildcard_count,               # Fewer wildcards first
+                          0 if has_extension else 1,    # Files with extensions first
+                          path_depth,                   # Shorter paths first
+                          pattern                       # Alphabetical as tiebreaker
+                      )
                   
                   new_reviewers_lines.sort(key=sort_codeowners_lines)
                   
