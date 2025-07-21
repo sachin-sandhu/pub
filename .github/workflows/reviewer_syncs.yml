@@ -34,6 +34,7 @@ jobs:
                   'bundler': ['Gemfile', 'Gemfile.lock', '*.gemspec'],
                   'bun': ['package.json', 'bun.lockb'],
                   'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
+                  'npm_and_yarn': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
                   'cargo': ['Cargo.toml', 'Cargo.lock'],
                   'composer': ['composer.json', 'composer.lock'],
                   'devcontainers': ['.devcontainer/devcontainer.json', '.devcontainer.json'],
@@ -312,5 +313,5 @@ jobs:
           if [ "${{ steps.sync.outputs.has_changes }}" = "true" ]; then
             echo "CODEOWNERS file has been updated and PR created"
           else
-            echo "CODEOWNERS is already up to date"
+            echo "No changes needed - CODEOWNERS is already up to date"
           fi
