@@ -60,8 +60,11 @@ jobs:
               if not directory.startswith('/'):
                   directory = '/' + directory
               
+              # Normalize directory path - remove trailing slash and handle root
               if directory == '/':
                   directory = ''
+              else:
+                  directory = directory.rstrip('/')
               
               manifest_files = ecosystem_manifests.get(ecosystem, [])
               patterns = []
