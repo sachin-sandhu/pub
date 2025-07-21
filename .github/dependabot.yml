@@ -1,6 +1,6 @@
 version: 2
 updates:
-- package-ecosystem: "pub"
+- package-ecosystem: "npm_and_yarn"
   directory: "/6"
   schedule:
     interval: "cron"
@@ -29,7 +29,7 @@ updates:
   reviewers: 
     - "sachin-sandhu"
     - "kbukum1"
-- package-ecosystem: "pub"
+- package-ecosystem: "elm"
   directory: "/2"
   schedule:
     interval: "cron"
@@ -41,7 +41,7 @@ updates:
       - "@typescript-eslint/*"
   reviewers: 
     - "randhircs"
-- package-ecosystem: "pub"
+- package-ecosystem: "dotnet_sdk"
   directory: "/3/"
   schedule:
     interval: "cron"
