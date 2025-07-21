@@ -17,7 +17,6 @@ updates:
     - "/1/frontend/"
     - "/2/backend/"
     - "/1/lib-*"
-    - "**/*"
   schedule:
     interval: "cron"
     cronjob: "0 8 * * 2,7"
