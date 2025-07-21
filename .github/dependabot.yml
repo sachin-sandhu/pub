@@ -1,6 +1,6 @@
 version: 2
 updates:
-- package-ecosystem: "npm_and_yarn"
+- package-ecosystem: "npm"
   directory: "/6"
   schedule:
     interval: "cron"
@@ -41,7 +41,7 @@ updates:
       - "@typescript-eslint/*"
   reviewers: 
     - "randhircs"
-- package-ecosystem: "dotnet_sdk"
+- package-ecosystem: "dotnet-sdk"
   directory: "/3/"
   schedule:
     interval: "cron"
