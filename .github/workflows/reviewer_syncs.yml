@@ -30,31 +30,64 @@ jobs:
               Handles both specific files and glob patterns correctly for CODEOWNERS.
               """
               # Mapping of ecosystems to their manifest files
+              # Based on: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#package-ecosystem-
               ecosystem_manifests = {
+                  # Ruby ecosystem
                   'bundler': ['Gemfile', 'Gemfile.lock', '*.gemspec'],
+                  
+                  # JavaScript/Node.js ecosystems  
                   'bun': ['package.json', 'bun.lockb'],
+                  'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
+                  
+                  # Rust ecosystem
                   'cargo': ['Cargo.toml', 'Cargo.lock'],
+                  
+                  # PHP ecosystem
                   'composer': ['composer.json', 'composer.lock'],
+                  
+                  # Container ecosystems
                   'devcontainers': ['.devcontainer/devcontainer.json', '.devcontainer.json'],
                   'docker': ['Dockerfile', 'Dockerfile.*', '*.dockerfile'],
                   'docker-compose': ['docker-compose.yml', 'docker-compose.yaml', 'compose.yml', 'compose.yaml'],
+                  
+                  # .NET ecosystem
                   'dotnet-sdk': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'global.json'],
-                  'elm': ['elm.json'],
-                  'github-actions': ['.github/workflows/*.yml', '.github/workflows/*.yaml', 'action.yml', 'action.yaml'],
-                  'gitsubmodule': ['.gitmodules'],
-                  'gomod': ['go.mod', 'go.sum'],
-                  'gradle': ['build.gradle', 'build.gradle.kts', 'gradle.properties', 'settings.gradle', 'settings.gradle.kts'],
-                  'helm': ['Chart.yaml', 'Chart.yml', 'values.yaml', 'values.yml'],
-                  'hex': ['mix.exs', 'mix.lock'],
-                  'mix': ['mix.exs', 'mix.lock'],
-                  'maven': ['pom.xml', '*.pom'],
-                  'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json'],
                   'nuget': ['*.csproj', '*.fsproj', '*.vbproj', '*.sln', 'packages.config', 'Directory.Build.props', 'Directory.Packages.props'],
+                  
+                  # Elm ecosystem
+                  'elm': ['elm.json'],
+                  
+                  # GitHub Actions
+                  'github-actions': ['.github/workflows/*.yml', '.github/workflows/*.yaml', 'action.yml', 'action.yaml'],
+                  
+                  # Git submodules
+                  'gitsubmodule': ['.gitmodules'],
+                  
+                  # Go ecosystem
+                  'gomod': ['go.mod', 'go.sum'],
+                  
+                  # Java/JVM ecosystems
+                  'gradle': ['build.gradle', 'build.gradle.kts', 'gradle.properties', 'settings.gradle', 'settings.gradle.kts'],
+                  'maven': ['pom.xml', '*.pom'],
+                  
+                  # Kubernetes/Helm
+                  'helm': ['Chart.yaml', 'Chart.yml', 'values.yaml', 'values.yml'],
+                  
+                  # Elixir ecosystem (hex is the package manager, mix is the build tool)
+                  'mix': ['mix.exs', 'mix.lock'],
+                  
+                  # Python ecosystems
                   'pip': ['requirements.txt', 'requirements/*.txt', 'setup.py', 'setup.cfg', 'pyproject.toml', 'Pipfile', 'Pipfile.lock'],
+                  'uv': ['pyproject.toml', 'uv.lock'],
+                  
+                  # Dart/Flutter ecosystem
                   'pub': ['pubspec.yaml', 'pubspec.yml', 'pubspec.lock'],
+                  
+                  # Swift ecosystem
                   'swift': ['Package.swift', 'Package.resolved'],
-                  'terraform': ['*.tf', '*.tfvars', '*.hcl'],
-                  'uv': ['pyproject.toml', 'uv.lock']
+                  
+                  # Terraform
+                  'terraform': ['*.tf', '*.tfvars', '*.hcl']
               }
               
               directory = directory.strip()
@@ -312,6 +345,27 @@ jobs:
             This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
             
             - Updated `CODEOWNERS` file with `reviewers` from `dependabot.yml` file configuration
+            - Added permissions for specific manifest files based on package ecosystems with proper glob pattern support:
+              - **bundler**: Gemfile, Gemfile.lock, *.gemspec (with recursive patterns)
+              - **npm**: package.json, package-lock.json, npm-shrinkwrap.json, yarn.lock, pnpm-lock.yaml (with recursive patterns)
+              - **cargo**: Cargo.toml, Cargo.lock  
+              - **composer**: composer.json, composer.lock
+              - **docker**: Dockerfile, Dockerfile.*, *.dockerfile (with recursive patterns)
+              - **pip**: requirements.txt, requirements/*.txt, setup.py, pyproject.toml, Pipfile (with recursive patterns)
+              - **dotnet-sdk & nuget**: *.csproj, *.fsproj, *.vbproj, *.sln, packages.config, global.json (with recursive patterns)
+              - **mix** (Elixir): mix.exs, mix.lock (corrected from duplicate hex/mix entries)
+              - **And 15+ other officially supported ecosystems with their respective manifest files**
+            
+            #### Pattern Types Generated:
+            - **Specific files**: `/path/to/specific.file` (exact file matches)
+            - **Glob patterns**: `/path/*.extension` (wildcard file matches in directory)
+            - **Recursive patterns**: `/path/**/*.extension` (wildcard matches in subdirectories)
+            
+            #### Precedence Rules:
+            - Root directory patterns have highest priority
+            - Specific files take precedence over glob patterns
+            - Directory-scoped patterns come before recursive patterns
+            - Proper CODEOWNERS ordering ensures correct ownership resolution
 
             ---
             *Created automatically by the `migrate-dependabot-reviewers` workflow.*
@@ -322,7 +376,7 @@ jobs:
       - name: Output results
         run: |
           if [ "${{ steps.sync.outputs.has_changes }}" = "true" ]; then
-            echo "✅ CODEOWNERS file has been updated and PR created"
+            echo "CODEOWNERS file has been updated and PR created"
           else
-            echo "ℹ️ No changes needed - CODEOWNERS is already up to date"
+            echo "No changes needed - CODEOWNERS is already up to date"
           fi
