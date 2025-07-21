@@ -34,7 +34,6 @@ jobs:
                   'bundler': ['Gemfile', 'Gemfile.lock', '*.gemspec'],
                   'bun': ['package.json', 'bun.lockb'],
                   'npm': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
-                  'npm_and_yarn': ['package.json', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml'],
                   'cargo': ['Cargo.toml', 'Cargo.lock'],
                   'composer': ['composer.json', 'composer.lock'],
                   'devcontainers': ['.devcontainer/devcontainer.json', '.devcontainer.json'],
@@ -208,11 +207,11 @@ jobs:
                       is_root_pattern = pattern.startswith('/*') and not pattern.startswith('/**')
                       
                       return (
-                          0 if is_root_pattern else 1,  # Root patterns first
-                          wildcard_count,               # Fewer wildcards first
-                          0 if has_extension else 1,    # Files with extensions first
-                          path_depth,                   # Shorter paths first
-                          pattern                       # Alphabetical as tiebreaker
+                          0 if is_root_pattern else 1,  
+                          wildcard_count,
+                          0 if has_extension else 1,
+                          path_depth,
+                          pattern
                       )
                   
                   new_reviewers_lines.sort(key=sort_codeowners_lines)
