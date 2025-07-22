@@ -160,13 +160,30 @@ jobs:
 
                   print(f'Directory reviewers list: {directory_reviewers}')
 
-                  codeowners_file_path = 'CODEOWNERS'
+                  # Check for CODEOWNERS file in all possible locations
+                  possible_codeowners_paths = [
+                      'CODEOWNERS',           # Root directory
+                      '.github/CODEOWNERS',   # .github/ directory
+                      'docs/CODEOWNERS'       # docs/ directory
+                  ]
+                  
+                  codeowners_file_path = None
                   codeowners_content = ''
                   has_changes = False
-
-                  if os.path.exists(codeowners_file_path):
-                      with open(codeowners_file_path, 'r') as f:
-                          codeowners_content = f.read()
+                  
+                  # Find existing CODEOWNERS file
+                  for path in possible_codeowners_paths:
+                      if os.path.exists(path):
+                          codeowners_file_path = path
+                          with open(path, 'r') as f:
+                              codeowners_content = f.read()
+                          print(f'Found existing CODEOWNERS file at: {path}')
+                          break
+                  
+                  # If no CODEOWNERS file exists, use the root directory as default
+                  if codeowners_file_path is None:
+                      codeowners_file_path = 'CODEOWNERS'
+                      print(f'No existing CODEOWNERS file found, will create at: {codeowners_file_path}')
 
                   # We need this to ensure the section is added correctly for new as well as existing
                   dependabot_section = '# Dependabot reviewers (migrated from .github/dependabot.yml)'
@@ -263,12 +280,18 @@ jobs:
                       has_changes = True
 
                   if has_changes:
+                      # Ensure the directory exists for the CODEOWNERS file
+                      codeowners_dir = os.path.dirname(codeowners_file_path)
+                      if codeowners_dir and not os.path.exists(codeowners_dir):
+                          os.makedirs(codeowners_dir, exist_ok=True)
+                          print(f'Created directory: {codeowners_dir}')
+                      
                       new_content = '\n'.join(lines)
                       if not new_content.endswith('\n'):
                           new_content += '\n'
                       with open(codeowners_file_path, 'w') as f:
                           f.write(new_content)
-                      print('CODEOWNERS file updated with dependabot reviewers')
+                      print(f'CODEOWNERS file updated at: {codeowners_file_path}')
                       return True
                   else:
                       print('No changes were made to CODEOWNERS file')
@@ -284,6 +307,17 @@ jobs:
               print('has_changes=true')
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write('has_changes=true\n')
+              
+              # Output the CODEOWNERS file path for the PR body
+              with open('codeowners_path.txt', 'w') as f:
+                  # Re-check which file was used
+                  possible_paths = ['CODEOWNERS', '.github/CODEOWNERS', 'docs/CODEOWNERS']
+                  used_path = 'CODEOWNERS'  # default
+                  for path in possible_paths:
+                      if os.path.exists(path):
+                          used_path = path
+                          break
+                  f.write(used_path)
           else:
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write('has_changes=false\n')
@@ -299,7 +333,7 @@ jobs:
           body: |
             This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
 
-            - Updated `CODEOWNERS` file with `reviewers` from `dependabot.yml` file configuration
+            - Updated `$(cat codeowners_path.txt 2>/dev/null || echo "CODEOWNERS")` file with `reviewers` from `dependabot.yml` file configuration
 
             ---
             *Created automatically by the `migrate-dependabot-reviewers` workflow.*
@@ -310,7 +344,10 @@ jobs:
       - name: Output results
         run: |
           if [ "${{ steps.sync.outputs.has_changes }}" = "true" ]; then
-            echo "CODEOWNERS file has been updated and PR created"
+            CODEOWNERS_PATH=$(cat codeowners_path.txt 2>/dev/null || echo "CODEOWNERS")
+            echo "CODEOWNERS file has been updated at: $CODEOWNERS_PATH and PR created"
           else
             echo "No changes needed - CODEOWNERS is already up to date"
           fi
+          # Clean up temporary file
+          rm -f codeowners_path.txt
