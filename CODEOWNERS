@@ -1,0 +1,37 @@
+
+# Dependabot reviewers (migrated from .github/dependabot.yml)
+/*.dockerfile @thavaahariharangit
+/4/pubspec.lock @kbukum1
+/4/pubspec.yaml @kbukum1
+/4/pubspec.yml @kbukum1
+/5/pubspec.lock @robaiken
+/5/pubspec.yaml @robaiken
+/5/pubspec.yml @robaiken
+/6/npm-shrinkwrap.json @abhishekbhaskar
+/6/package-lock.json @abhishekbhaskar
+/6/package.json @abhishekbhaskar
+/6/pnpm-lock.yaml @abhishekbhaskar
+/6/yarn.lock @abhishekbhaskar
+/7/global.json @markhallen
+/7/packages.config @markhallen
+/1/frontend/pubspec.lock @sachin-sandhu @kbukum1
+/1/frontend/pubspec.yaml @sachin-sandhu @kbukum1
+/1/frontend/pubspec.yml @sachin-sandhu @kbukum1
+/2/backend/pubspec.lock @sachin-sandhu @kbukum1
+/2/backend/pubspec.yaml @sachin-sandhu @kbukum1
+/2/backend/pubspec.yml @sachin-sandhu @kbukum1
+/Dockerfile @thavaahariharangit
+/Dockerfile.* @thavaahariharangit
+/7/*.csproj @markhallen
+/7/*.fsproj @markhallen
+/7/*.sln @markhallen
+/7/*.vbproj @markhallen
+/1/libs-*/pubspec.lock @sachin-sandhu @kbukum1
+/1/libs-*/pubspec.yaml @sachin-sandhu @kbukum1
+/1/libs-*/pubspec.yml @sachin-sandhu @kbukum1
+/**/*.dockerfile @thavaahariharangit
+/**/Dockerfile.* @thavaahariharangit
+/7/**/*.csproj @markhallen
+/7/**/*.fsproj @markhallen
+/7/**/*.sln @markhallen
+/7/**/*.vbproj @markhallen
