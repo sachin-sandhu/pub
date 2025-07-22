@@ -309,15 +309,14 @@ jobs:
                   f.write('has_changes=true\n')
               
               # Output the CODEOWNERS file path for the PR body
-              with open('codeowners_path.txt', 'w') as f:
-                  # Re-check which file was used
-                  possible_paths = ['CODEOWNERS', '.github/CODEOWNERS', 'docs/CODEOWNERS']
-                  used_path = 'CODEOWNERS'  # default
-                  for path in possible_paths:
-                      if os.path.exists(path):
-                          used_path = path
-                          break
-                  f.write(used_path)
+              possible_paths = ['CODEOWNERS', '.github/CODEOWNERS', 'docs/CODEOWNERS']
+              used_path = 'CODEOWNERS'  # default
+              for path in possible_paths:
+                  if os.path.exists(path):
+                      used_path = path
+                      break
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'codeowners_path={used_path}\n')
           else:
               with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
                   f.write('has_changes=false\n')
@@ -333,7 +332,7 @@ jobs:
           body: |
             This PR automatically migrates the reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
 
-            - Updated `$(cat codeowners_path.txt 2>/dev/null || echo "CODEOWNERS")` file with `reviewers` from `dependabot.yml` file configuration
+            - Updated `${{ steps.sync.outputs.codeowners_path || 'CODEOWNERS' }}` file with `reviewers` from `dependabot.yml` file configuration
 
             ---
             *Created automatically by the `migrate-dependabot-reviewers` workflow.*
@@ -344,10 +343,8 @@ jobs:
       - name: Output results
         run: |
           if [ "${{ steps.sync.outputs.has_changes }}" = "true" ]; then
-            CODEOWNERS_PATH=$(cat codeowners_path.txt 2>/dev/null || echo "CODEOWNERS")
+            CODEOWNERS_PATH="${{ steps.sync.outputs.codeowners_path || 'CODEOWNERS' }}"
             echo "CODEOWNERS file has been updated at: $CODEOWNERS_PATH and PR created"
           else
             echo "No changes needed - CODEOWNERS is already up to date"
           fi
-          # Clean up temporary file
-          rm -f codeowners_path.txt
