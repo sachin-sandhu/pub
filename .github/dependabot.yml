@@ -11,7 +11,7 @@ updates:
       patterns:
       - "@typescript-eslint/*"
   reviewers: 
-    - "abhishekbhaskar"
+    - "abhishekbhaskar1"
 - package-ecosystem: "pub"
   directories:
     - "/1/frontend/"
