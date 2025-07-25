@@ -28,7 +28,7 @@ updates:
   reviewers: 
     - "sachin-sandhu"
     - "kbukum1"
-- package-ecosystem: "hex"
+- package-ecosystem: "elm"
   directory: "/2"
   schedule:
     interval: "cron"
