@@ -1,12 +1,13 @@
 
 # Dependabot reviewers (migrated from .github/dependabot.yml)
 /*.dockerfile @thavaahariharangit
+/2/elm.json @randhircs
 /4/pubspec.lock @kbukum1
 /4/pubspec.yaml @kbukum1
 /4/pubspec.yml @kbukum1
-/5/pubspec.lock @robaiken
-/5/pubspec.yaml @robaiken
-/5/pubspec.yml @robaiken
+/5/pubspec.lock @robaiken @sachin-sandhu
+/5/pubspec.yaml @robaiken @sachin-sandhu
+/5/pubspec.yml @robaiken @sachin-sandhu
 /6/npm-shrinkwrap.json @abhishekbhaskar
 /6/package-lock.json @abhishekbhaskar
 /6/package.json @abhishekbhaskar1
