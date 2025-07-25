@@ -76,6 +76,7 @@ updates:
       - "@typescript-eslint/*"
   reviewers: 
     - "robaiken"
+    - "sachin-sandhu"
 - package-ecosystem: "docker"
   directory: "/"
   schedule:
