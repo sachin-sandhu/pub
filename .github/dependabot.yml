@@ -63,7 +63,7 @@ updates:
       patterns:
       - "@typescript-eslint/*"
   reviewers: 
-    - "kbukum1"
+    - "kbukum11"
 - package-ecosystem: "pub"
   directory: "/5"
   schedule:
