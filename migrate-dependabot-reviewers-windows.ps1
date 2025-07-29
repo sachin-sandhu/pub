@@ -357,48 +357,6 @@ function Get-ManifestFilesForEcosystem {
     return $patterns | Sort-Object -Unique
 }
 
-# Function to parse YAML and extract reviewers
-function Get-DependabotReviewers {
-    param([string]$FilePath)
-    
-    if (-not (Test-Path $FilePath)) {
-        Write-Error "dependabot.yml file not found!"
-        return $null
-    }
-    
-    try {
-        # Read the YAML file content
-        $yamlContent = Get-Content $FilePath -Raw
-        
-        # Parse YAML using our native parser
-        $parsed = ConvertFrom-Yaml -YamlContent $yamlContent
-        
-        if (-not $parsed -or -not $parsed.updates) {
-            Write-Warning "No updates found in dependabot.yml"
-            return @()
-        }
-        
-        # Filter updates that have reviewers and convert to expected format
-        $reviewerUpdates = @()
-        foreach ($update in $parsed.updates) {
-            if ($update.ContainsKey('reviewers') -and $update.reviewers.Count -gt 0) {
-                $reviewerUpdate = @{
-                    'package-ecosystem' = $update['package-ecosystem']
-                    'directory' = if ($update.ContainsKey('directory')) { $update['directory'] } else { '/' }
-                    'reviewers' = $update['reviewers']
-                }
-                $reviewerUpdates += $reviewerUpdate
-            }
-        }
-        
-        return $reviewerUpdates
-    }
-    catch {
-        Write-Error "Failed to parse dependabot.yml: $_"
-        return $null
-    }
-}
-
 # Function to find existing CODEOWNERS file
 function Find-CodeownersFile {
     $possiblePaths = @("CODEOWNERS", ".github\CODEOWNERS", "docs\CODEOWNERS")
@@ -612,7 +570,6 @@ function Start-Migration {
     Write-Success "Migration completed successfully!"
     
     return $true
-}
 }
 
 # Main execution
