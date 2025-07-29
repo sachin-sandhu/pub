@@ -2,9 +2,11 @@
 
 This directory contains Windows-optimized scripts to migrate Dependabot reviewers from `.github/dependabot.yml` to the `CODEOWNERS` file.
 
+**NEW: Self-contained version with NO external dependencies!**
+
 ## Files
 
-- **`migrate-dependabot-reviewers-windows.ps1`** - Main PowerShell script with full functionality
+- **`migrate-dependabot-reviewers-windows.ps1`** - Main PowerShell script with native YAML parsing
 - **`migrate-dependabot-reviewers-windows.bat`** - Batch wrapper for easier command prompt execution
 
 ## Requirements
@@ -13,28 +15,16 @@ This directory contains Windows-optimized scripts to migrate Dependabot reviewer
 - **Windows 10** (version 1709+) or **Windows 11**
 - **PowerShell 5.0+** (pre-installed on supported Windows versions)
 
-### Package Manager (One of the following)
-- **Chocolatey** - https://chocolatey.org/install
-- **Scoop** - https://scoop.sh/
-- **Winget** - Built into Windows 10 1709+ and Windows 11
-
-### Dependencies (Auto-installed)
-- **yq** - YAML processor
-- **jq** - JSON processor
+### Dependencies
+- **None!** - Completely self-contained script with native PowerShell YAML parsing
 
 ## Usage
 
 ### PowerShell Execution (Recommended)
 
 ```powershell
-# Run with temporary installation (default - perfect for CI/CD)
+# Run the migration
 .\migrate-dependabot-reviewers-windows.ps1
-
-# Run with permanent installation
-.\migrate-dependabot-reviewers-windows.ps1 -PermanentInstall
-
-# Run without auto-installation (manual dependency management)
-.\migrate-dependabot-reviewers-windows.ps1 -NoAutoInstall
 
 # Show help
 .\migrate-dependabot-reviewers-windows.ps1 -Help
@@ -43,14 +33,8 @@ This directory contains Windows-optimized scripts to migrate Dependabot reviewer
 ### Command Prompt Execution
 
 ```cmd
-REM Run with temporary installation (default)
+REM Run the migration
 migrate-dependabot-reviewers-windows.bat
-
-REM Run with permanent installation
-migrate-dependabot-reviewers-windows.bat --permanent-install
-
-REM Run without auto-installation
-migrate-dependabot-reviewers-windows.bat --no-auto-install
 
 REM Show help
 migrate-dependabot-reviewers-windows.bat --help
@@ -58,19 +42,16 @@ migrate-dependabot-reviewers-windows.bat --help
 
 ## Features
 
-### 🚀 Auto-Installation
-- Automatically detects and uses available package managers (Chocolatey, Scoop, Winget)
-- Installs missing dependencies (`yq`, `jq`) without user intervention
-- Smart fallback between package managers
+### 🚀 Self-Contained Operation
+- **No external dependencies** required - completely self-contained
+- **Native PowerShell YAML parsing** implementation
+- **Built-in JSON processing** with PowerShell cmdlets
+- Perfect for air-gapped environments and secure networks
 
-### 🔄 Temporary Installation (Default)
-- Dependencies are automatically removed after script completion
-- Perfect for CI/CD environments and automated workflows
-- Keeps your system clean and minimal
-
-### 🛠️ Permanent Installation
-- Use `--permanent-install` flag to keep dependencies installed
-- Useful for development environments where tools are used regularly
+### � Zero Installation Required
+- Works out-of-the-box on any Windows system with PowerShell 5.0+
+- No package managers needed (Chocolatey, Scoop, Winget)
+- No additional tools to install or manage
 
 ### 📦 Multi-Ecosystem Support
 Supports all major package ecosystems:
@@ -100,30 +81,20 @@ Supports all major package ecosystems:
 - Sorts patterns for optimal Git matching performance
 - Supports multiple CODEOWNERS file locations
 
-## Installation Options
+## Installation & Setup
 
-### Option 1: Chocolatey
-```cmd
-# Install Chocolatey (if not already installed)
-# Run as Administrator
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+### No Installation Required!
+The script is completely self-contained and requires no setup. Simply download and run:
 
-# The script will auto-install yq and jq via Chocolatey
-```
+1. Download the PowerShell script and batch file
+2. Place them in your repository root or any convenient location
+3. Run the script - that's it!
 
-### Option 2: Scoop
+### Verification
+To verify the script works correctly:
 ```powershell
-# Install Scoop (if not already installed)
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-irm get.scoop.sh | iex
-
-# The script will auto-install yq and jq via Scoop
-```
-
-### Option 3: Winget
-```cmd
-# Winget is pre-installed on Windows 10 1709+ and Windows 11
-# The script will auto-install yq and jq via Winget
+# Test the script help
+.\migrate-dependabot-reviewers-windows.ps1 -Help
 ```
 
 ## Troubleshooting
@@ -142,21 +113,16 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 PowerShell.exe -ExecutionPolicy Bypass -File ".\migrate-dependabot-reviewers-windows.ps1"
 ```
 
-### Package Manager Issues
-1. **Chocolatey not found**: Install from https://chocolatey.org/install
-2. **Scoop not found**: Install from https://scoop.sh/
-3. **Winget not found**: Update Windows to latest version
+### YAML Parsing Issues
+If the script has trouble parsing your `dependabot.yml`:
+1. Ensure the file uses standard YAML formatting
+2. Check for proper indentation (spaces, not tabs)
+3. Verify the `updates` section structure matches Dependabot specification
 
-### Dependency Installation Failures
-- Ensure you have internet connectivity
-- Run PowerShell/Command Prompt as Administrator if needed
-- Check if your corporate firewall blocks package manager repositories
-
-### PATH Issues
-If tools are installed but not found:
-1. Restart your PowerShell/Command Prompt session
-2. Check PATH environment variable
-3. Log out and log back in to Windows
+### Common File Issues
+- Ensure `.github/dependabot.yml` exists in your repository
+- Check that the file has the correct structure with `updates` and `reviewers` sections
+- Verify reviewers are properly formatted as a YAML array
 
 ## CI/CD Integration
 
@@ -184,22 +150,16 @@ If tools are installed but not found:
 # Navigate to repository root
 cd C:\path\to\your\repo
 
-# Run migration with defaults (temporary installation)
+# Run migration (no setup required!)
 .\migrate-dependabot-reviewers-windows.ps1
 ```
 
 ### CI/CD Pipeline
 ```powershell
-# Perfect for automated environments - installs dependencies temporarily
+# Perfect for automated environments - no dependencies to manage
 .\migrate-dependabot-reviewers-windows.ps1
 
-# Dependencies are automatically cleaned up after completion
-```
-
-### Development Environment
-```powershell
-# Keep tools installed for repeated use
-.\migrate-dependabot-reviewers-windows.ps1 -PermanentInstall
+# Works in any CI/CD system that supports PowerShell
 ```
 
 ## Output
@@ -213,18 +173,9 @@ The script provides colored, informative output:
 Example output:
 ```
 ℹ️  Starting Dependabot reviewers migration to CODEOWNERS (Windows)...
-⚠️  Missing required tools: yq, jq
-ℹ️  Temporarily installing missing tools using chocolatey...
-ℹ️  Installing yq...
-✅ Successfully installed yq
-ℹ️  Installing jq...
-✅ Successfully installed jq
-✅ All dependencies installed successfully!
 ℹ️  Processing ecosystem: npm, directory: /
 ℹ️  Found existing CODEOWNERS file at: CODEOWNERS
 ℹ️  Updating existing Dependabot reviewers section...
 ✅ CODEOWNERS file updated at: CODEOWNERS
 ✅ Migration completed successfully!
-ℹ️  Cleaning up temporarily installed dependencies...
-✅ Cleanup completed!
 ```

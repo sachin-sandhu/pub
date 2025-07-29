@@ -1,6 +1,6 @@
 @echo off
 REM Windows Batch wrapper for PowerShell migration script
-REM This allows execution from Command Prompt without PowerShell execution policy issues
+REM Self-contained script with no external dependencies
 
 setlocal EnableDelayedExpansion
 
@@ -22,8 +22,6 @@ set "SHOW_HELP=false"
 if "%~1"=="" goto :execute
 if /i "%~1"=="-h" set "SHOW_HELP=true"
 if /i "%~1"=="--help" set "SHOW_HELP=true"
-if /i "%~1"=="--no-auto-install" set "PS_ARGS=!PS_ARGS! -NoAutoInstall"
-if /i "%~1"=="--permanent-install" set "PS_ARGS=!PS_ARGS! -PermanentInstall"
 shift
 goto :parse_args
 
@@ -32,29 +30,25 @@ if "%SHOW_HELP%"=="true" (
     echo Usage: %~nx0 [OPTIONS]
     echo.
     echo Migrate Dependabot reviewers from .github/dependabot.yml to CODEOWNERS file
-    echo Optimized for Windows with auto-dependency installation
+    echo Self-contained script with no external dependencies
     echo.
     echo Options:
     echo   -h, --help             Show this help message
-    echo   --no-auto-install      Disable automatic dependency installation
-    echo   --permanent-install    Install dependencies permanently (instead of temp^)
     echo.
     echo Requirements:
     echo   - PowerShell 5.0+ (pre-installed on Windows 10+^)
-    echo   - Package manager (Chocolatey, Scoop, or Winget^)
-    echo   - yq and jq (will be auto-installed if missing^)
     echo.
     echo Features:
-    echo   - Automatically installs missing dependencies via package managers
-    echo   - Temporary installation by default (perfect for CI/CD^)
+    echo   - No external dependencies - completely self-contained
+    echo   - Native PowerShell YAML parsing implementation
+    echo   - Built-in JSON processing capabilities
     echo   - Supports multiple package ecosystems
     echo   - Preserves existing CODEOWNERS content
     echo   - Sorts patterns for optimal matching
     echo.
     echo Examples:
-    echo   %~nx0                        # Run with temporary installation (default^)
-    echo   %~nx0 --permanent-install    # Run with permanent installation
-    echo   %~nx0 --no-auto-install      # Run without auto-installation
+    echo   %~nx0                        # Run the migration
+    echo   %~nx0 --help                 # Show this help message
     echo.
     goto :end
 )

@@ -1,31 +1,25 @@
 # Windows PowerShell script to migrate Dependabot reviewers to CODEOWNERS
 # 
-# Optimized for Windows with native PowerShell and package managers
-# Features auto-installation of dependencies via multiple package managers
-# Uses temporary installation by default for CI/CD environments
+# Optimized for Windows with native PowerShell - no external dependencies required
+# Features built-in YAML parsing and JSON processing using PowerShell
+# Self-contained script with no package manager requirements
 # 
 # Requirements:
 # - PowerShell 5.0+ (pre-installed on Windows 10+)
-# - Package manager (Chocolatey, Scoop, or Winget)
 # 
-# Dependencies (auto-installed if missing):
-# - yq (YAML processor)
-# - jq (JSON processor)
+# Dependencies:
+# - None! Uses built-in PowerShell capabilities for YAML/JSON processing
 #
-# Usage modes:
-# - Temporary install (DEFAULT): dependencies are removed after script completion
-# - Permanent install: dependencies remain after script completion
+# Features:
+# - No external dependencies - completely self-contained
+# - Native PowerShell YAML parsing implementation
+# - Built-in JSON processing with ConvertFrom-Json
 
 param(
-    [switch]$Help,
-    [switch]$NoAutoInstall,
-    [switch]$PermanentInstall
+    [switch]$Help
 )
 
-# Global variables
-$script:TempInstalledTools = @()
-$script:CleanupOnTrap = $false
-$script:PackageManager = ""
+# No global variables needed for package management
 
 # Function to display colored output
 function Write-Info {
@@ -48,197 +42,163 @@ function Write-Error {
     Write-Host "❌ $Message" -ForegroundColor Red
 }
 
-# Function to detect available package managers
-function Get-AvailablePackageManager {
-    # Check for Chocolatey
-    if (Get-Command choco -ErrorAction SilentlyContinue) {
-        return "chocolatey"
-    }
-    
-    # Check for Scoop
-    if (Get-Command scoop -ErrorAction SilentlyContinue) {
-        return "scoop"
-    }
-    
-    # Check for Winget (Windows 10 1709+)
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        return "winget"
-    }
-    
-    return $null
-}
-
-# Function to install package using detected package manager
-function Install-Package {
+# Function to parse YAML content natively in PowerShell
+function ConvertFrom-Yaml {
     param(
-        [string]$PackageName,
-        [string]$PackageManager
+        [string]$YamlContent
     )
     
     try {
-        switch ($PackageManager) {
-            "chocolatey" {
-                $result = & choco install $PackageName -y 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            "scoop" {
-                $result = & scoop install $PackageName 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            "winget" {
-                $result = & winget install $PackageName --accept-source-agreements --accept-package-agreements 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            default {
-                return $false
-            }
-        }
-    }
-    catch {
-        return $false
-    }
-}
-
-# Function to uninstall package using detected package manager
-function Uninstall-Package {
-    param(
-        [string]$PackageName,
-        [string]$PackageManager
-    )
-    
-    try {
-        switch ($PackageManager) {
-            "chocolatey" {
-                $result = & choco uninstall $PackageName -y 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            "scoop" {
-                $result = & scoop uninstall $PackageName 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            "winget" {
-                $result = & winget uninstall $PackageName 2>&1
-                return $LASTEXITCODE -eq 0
-            }
-            default {
-                return $false
-            }
-        }
-    }
-    catch {
-        return $false
-    }
-}
-
-# Function to check dependencies and auto-install if missing
-function Test-Dependencies {
-    param(
-        [bool]$AutoInstall = $true,
-        [bool]$TempInstall = $true
-    )
-    
-    $missingTools = @()
-    
-    if (-not (Get-Command yq -ErrorAction SilentlyContinue)) {
-        $missingTools += "yq"
-    }
-    
-    if (-not (Get-Command jq -ErrorAction SilentlyContinue)) {
-        $missingTools += "jq"
-    }
-    
-    if ($missingTools.Count -gt 0) {
-        Write-Warning "Missing required tools: $($missingTools -join ', ')"
+        # Simple YAML parser for dependabot.yml structure
+        $result = @{}
+        $updates = @()
         
-        if (-not $AutoInstall) {
-            Write-Info "Auto-installation is disabled. Please install missing tools manually:"
-            foreach ($tool in $missingTools) {
-                Write-Info "  Package manager install commands:"
-                Write-Info "    Chocolatey: choco install $tool"
-                Write-Info "    Scoop: scoop install $tool"
-                Write-Info "    Winget: winget install $tool"
+        $lines = $YamlContent -split "`n"
+        $inUpdates = $false
+        $currentUpdate = $null
+        $inReviewers = $false
+        $reviewersList = @()
+        $indentLevel = 0
+        
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            $line = $lines[$i]
+            $trimmedLine = $line.Trim()
+            
+            # Skip empty lines and comments
+            if ([string]::IsNullOrWhiteSpace($trimmedLine) -or $trimmedLine.StartsWith('#')) {
+                continue
             }
-            return $false
-        }
-        
-        # Detect package manager
-        $script:PackageManager = Get-AvailablePackageManager
-        if (-not $script:PackageManager) {
-            Write-Error "No supported package manager found (Chocolatey, Scoop, or Winget)"
-            Write-Info "Please install one of the following:"
-            Write-Info "  Chocolatey: https://chocolatey.org/install"
-            Write-Info "  Scoop: https://scoop.sh/"
-            Write-Info "  Winget: Built into Windows 10 1709+ and Windows 11"
-            return $false
-        }
-        
-        # Install missing tools
-        if ($TempInstall) {
-            Write-Info "Temporarily installing missing tools using $script:PackageManager..."
-        } else {
-            Write-Info "Installing missing tools using $script:PackageManager..."
-        }
-        
-        foreach ($tool in $missingTools) {
-            Write-Info "Installing $tool..."
-            if (Install-Package -PackageName $tool -PackageManager $script:PackageManager) {
-                Write-Success "Successfully installed $tool"
-                if ($TempInstall) {
-                    $script:TempInstalledTools += $tool
+            
+            # Check for updates section
+            if ($trimmedLine -eq 'updates:') {
+                $inUpdates = $true
+                continue
+            }
+            
+            if ($inUpdates) {
+                # Get current line indentation
+                $currentIndent = $line.Length - $line.TrimStart().Length
+                
+                # New update entry (starts with -)
+                if ($trimmedLine.StartsWith('- ')) {
+                    # Save previous update if it had reviewers
+                    if ($currentUpdate -and $currentUpdate.ContainsKey('reviewers') -and $currentUpdate.reviewers.Count -gt 0) {
+                        $updates += $currentUpdate
+                    }
+                    
+                    $currentUpdate = @{}
+                    $inReviewers = $false
+                    $reviewersList = @()
+                    $indentLevel = $currentIndent
+                    
+                    # Parse package-ecosystem on same line
+                    $packageEcosystem = $trimmedLine -replace '^-\s*package-ecosystem:\s*', ''
+                    if ($packageEcosystem -ne $trimmedLine) {
+                        $currentUpdate['package-ecosystem'] = $packageEcosystem.Trim('"').Trim("'")
+                    }
+                    continue
                 }
-            } else {
-                Write-Error "Failed to install $tool. Please install manually."
-                return $false
+                
+                # Parse key-value pairs within an update
+                if ($currentIndent -gt $indentLevel -and $trimmedLine.Contains(':')) {
+                    $parts = $trimmedLine -split ':', 2
+                    $key = $parts[0].Trim()
+                    $value = if ($parts.Count -gt 1) { $parts[1].Trim() } else { '' }
+                    
+                    switch ($key) {
+                        'package-ecosystem' {
+                            $currentUpdate['package-ecosystem'] = $value.Trim('"').Trim("'")
+                        }
+                        'directory' {
+                            $currentUpdate['directory'] = $value.Trim('"').Trim("'")
+                        }
+                        'reviewers' {
+                            $inReviewers = $true
+                            $reviewersList = @()
+                            # Check if reviewers are on the same line
+                            if (![string]::IsNullOrWhiteSpace($value)) {
+                                # Handle inline array format
+                                $inlineReviewers = $value.Trim('[').Trim(']').Split(',')
+                                foreach ($reviewer in $inlineReviewers) {
+                                    $cleanReviewer = $reviewer.Trim().Trim('"').Trim("'")
+                                    if (![string]::IsNullOrWhiteSpace($cleanReviewer)) {
+                                        $reviewersList += $cleanReviewer
+                                    }
+                                }
+                                $currentUpdate['reviewers'] = $reviewersList
+                                $inReviewers = $false
+                            }
+                        }
+                    }
+                    continue
+                }
+                
+                # Parse reviewers list items
+                if ($inReviewers -and $trimmedLine.StartsWith('-')) {
+                    $reviewer = $trimmedLine -replace '^-\s*', ''
+                    $reviewer = $reviewer.Trim('"').Trim("'")
+                    if (![string]::IsNullOrWhiteSpace($reviewer)) {
+                        $reviewersList += $reviewer
+                        $currentUpdate['reviewers'] = $reviewersList
+                    }
+                    continue
+                }
             }
         }
         
-        Write-Success "All dependencies installed successfully!"
-        
-        # Verify installations by refreshing PATH
-        $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH", "User")
-        
-        # Check if tools are now available
-        $stillMissing = @()
-        foreach ($tool in $missingTools) {
-            if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
-                $stillMissing += $tool
-            }
+        # Add the last update if it has reviewers
+        if ($currentUpdate -and $currentUpdate.ContainsKey('reviewers') -and $currentUpdate.reviewers.Count -gt 0) {
+            $updates += $currentUpdate
         }
         
-        if ($stillMissing.Count -gt 0) {
-            Write-Error "Some tools are still missing after installation: $($stillMissing -join ', ')"
-            Write-Info "You may need to restart your PowerShell session or update your PATH"
-            return $false
-        }
-        
-        # Enable cleanup for temp install
-        if ($TempInstall -and $script:TempInstalledTools.Count -gt 0) {
-            $script:CleanupOnTrap = $true
-        }
+        $result['updates'] = $updates
+        return $result
     }
-    
-    return $true
+    catch {
+        Write-Error "Failed to parse YAML content: $_"
+        return $null
+    }
 }
 
-# Function to cleanup temporarily installed dependencies
-function Remove-TempDependencies {
-    if ($script:TempInstalledTools.Count -gt 0) {
-        Write-Info "Cleaning up temporarily installed dependencies..."
-        Write-Info "Tools to remove: $($script:TempInstalledTools -join ', ')"
+# Function to parse dependabot.yml and extract reviewers
+function Get-DependabotReviewers {
+    param([string]$FilePath)
+    
+    if (-not (Test-Path $FilePath)) {
+        Write-Error "dependabot.yml file not found!"
+        return $null
+    }
+    
+    try {
+        # Read the YAML file content
+        $yamlContent = Get-Content $FilePath -Raw
         
-        foreach ($tool in $script:TempInstalledTools) {
-            Write-Info "Uninstalling $tool..."
-            if (Uninstall-Package -PackageName $tool -PackageManager $script:PackageManager) {
-                Write-Success "Successfully uninstalled $tool"
-            } else {
-                Write-Warning "Failed to uninstall $tool (it may be required by other packages)"
+        # Parse YAML using our native parser
+        $parsed = ConvertFrom-Yaml -YamlContent $yamlContent
+        
+        if (-not $parsed -or -not $parsed.updates) {
+            Write-Warning "No updates found in dependabot.yml"
+            return @()
+        }
+        
+        # Filter updates that have reviewers and convert to expected format
+        $reviewerUpdates = @()
+        foreach ($update in $parsed.updates) {
+            if ($update.ContainsKey('reviewers') -and $update.reviewers.Count -gt 0) {
+                $reviewerUpdate = @{
+                    'package-ecosystem' = $update['package-ecosystem']
+                    'directory' = if ($update.ContainsKey('directory')) { $update['directory'] } else { '/' }
+                    'reviewers' = $update['reviewers']
+                }
+                $reviewerUpdates += $reviewerUpdate
             }
         }
         
-        $script:TempInstalledTools = @()
-        Write-Success "Cleanup completed!"
-    } else {
-        Write-Info "No temporary dependencies to clean up"
+        return $reviewerUpdates
+    }
+    catch {
+        Write-Error "Failed to parse dependabot.yml: $_"
+        return $null
     }
 }
 
@@ -248,29 +208,25 @@ function Show-Usage {
 Usage: .\migrate-dependabot-reviewers-windows.ps1 [OPTIONS]
 
 Migrate Dependabot reviewers from .github/dependabot.yml to CODEOWNERS file
-Optimized for Windows with auto-dependency installation
+Self-contained PowerShell script with no external dependencies
 
 Options:
   -Help                  Show this help message
-  -NoAutoInstall         Disable automatic dependency installation
-  -PermanentInstall      Install dependencies permanently (instead of temp)
 
 Requirements:
   - PowerShell 5.0+ (pre-installed on Windows 10+)
-  - Package manager (Chocolatey, Scoop, or Winget)
-  - yq and jq (will be auto-installed if missing)
 
 Features:
-  - Automatically installs missing dependencies via package managers
-  - Temporary installation by default (perfect for CI/CD)
+  - No external dependencies - completely self-contained
+  - Native PowerShell YAML parsing implementation
+  - Built-in JSON processing capabilities
   - Supports multiple package ecosystems
   - Preserves existing CODEOWNERS content
   - Sorts patterns for optimal matching
 
 Examples:
-  .\migrate-dependabot-reviewers-windows.ps1                     # Run with temporary installation (default)
-  .\migrate-dependabot-reviewers-windows.ps1 -PermanentInstall   # Run with permanent installation
-  .\migrate-dependabot-reviewers-windows.ps1 -NoAutoInstall     # Run without auto-installation
+  .\migrate-dependabot-reviewers-windows.ps1       # Run the migration
+  .\migrate-dependabot-reviewers-windows.ps1 -Help # Show this help
 
 "@
 }
@@ -411,10 +367,31 @@ function Get-DependabotReviewers {
     }
     
     try {
-        # Extract updates that have reviewers and wrap in array
-        $yamlContent = & yq eval '.updates[] | select(has("reviewers")) | {"package-ecosystem": ."package-ecosystem", "directory": .directory // "/", "reviewers": .reviewers}' $FilePath -o json
-        $jsonArray = $yamlContent | & jq -s '.'
-        return $jsonArray | ConvertFrom-Json
+        # Read the YAML file content
+        $yamlContent = Get-Content $FilePath -Raw
+        
+        # Parse YAML using our native parser
+        $parsed = ConvertFrom-Yaml -YamlContent $yamlContent
+        
+        if (-not $parsed -or -not $parsed.updates) {
+            Write-Warning "No updates found in dependabot.yml"
+            return @()
+        }
+        
+        # Filter updates that have reviewers and convert to expected format
+        $reviewerUpdates = @()
+        foreach ($update in $parsed.updates) {
+            if ($update.ContainsKey('reviewers') -and $update.reviewers.Count -gt 0) {
+                $reviewerUpdate = @{
+                    'package-ecosystem' = $update['package-ecosystem']
+                    'directory' = if ($update.ContainsKey('directory')) { $update['directory'] } else { '/' }
+                    'reviewers' = $update['reviewers']
+                }
+                $reviewerUpdates += $reviewerUpdate
+            }
+        }
+        
+        return $reviewerUpdates
     }
     catch {
         Write-Error "Failed to parse dependabot.yml: $_"
@@ -467,17 +444,7 @@ function Sort-CodeownersLines {
 
 # Main function
 function Start-Migration {
-    param(
-        [bool]$AutoInstall = $true,
-        [bool]$TempInstall = $true
-    )
-    
     Write-Info "Starting Dependabot reviewers migration to CODEOWNERS (Windows)..."
-    
-    # Check dependencies first
-    if (-not (Test-Dependencies -AutoInstall $AutoInstall -TempInstall $TempInstall)) {
-        return $false
-    }
     
     $dependabotFile = ".github\dependabot.yml"
     
@@ -644,26 +611,9 @@ function Start-Migration {
     
     Write-Success "Migration completed successfully!"
     
-    # Cleanup temporary dependencies if needed
-    if ($TempInstall) {
-        $script:CleanupOnTrap = $false
-        Remove-TempDependencies
-    }
-    
     return $true
 }
-
-# Cleanup on script termination
-$script:OnExit = {
-    if ($script:CleanupOnTrap -and $script:TempInstalledTools.Count -gt 0) {
-        Write-Host ""
-        Write-Warning "Script interrupted, cleaning up temporary dependencies..."
-        Remove-TempDependencies
-    }
 }
-
-# Register cleanup event
-Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action $script:OnExit
 
 # Main execution
 try {
@@ -672,12 +622,8 @@ try {
         exit 0
     }
     
-    # Set defaults
-    $autoInstall = -not $NoAutoInstall
-    $tempInstall = -not $PermanentInstall  # Default to temp install unless permanent is specified
-    
     # Run the migration
-    $success = Start-Migration -AutoInstall $autoInstall -TempInstall $tempInstall
+    $success = Start-Migration
     
     if ($success) {
         exit 0
@@ -687,16 +633,5 @@ try {
 }
 catch {
     Write-Error "An error occurred: $_"
-    
-    # Cleanup on error if needed
-    if ($script:CleanupOnTrap -and $script:TempInstalledTools.Count -gt 0) {
-        Write-Warning "Cleaning up temporary dependencies due to error..."
-        Remove-TempDependencies
-    }
-    
     exit 1
-}
-finally {
-    # Unregister cleanup event
-    Unregister-Event -SourceIdentifier PowerShell.Exiting -ErrorAction SilentlyContinue
 }
