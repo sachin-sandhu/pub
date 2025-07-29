@@ -27,6 +27,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Initialize global arrays for YAML parsing (bash 3.2 compatibility)
+YAML_KEYS=()
+YAML_VALUES=()
+
 # Function to print colored output
 print_info() {
     echo -e "${BLUE}ℹ️  $1${NC}"
@@ -45,67 +49,165 @@ print_error() {
 }
 
 # ============================================================================
-# EMBEDDED YAML PARSER (Pure Bash Implementation)
+# EMBEDDED YAML PARSER (Pure Bash Implementation - Compatible with Bash 3.2+)
 # ============================================================================
 
-# Global variables for YAML parsing
-declare -A YAML_DATA
-YAML_PREFIX=""
+# Function to store key-value pairs in arrays
+yaml_set() {
+    local key="$1"
+    local value="$2"
+    
+    # Check if key already exists
+    local i=0
+    while [[ $i -lt ${#YAML_KEYS[@]} ]]; do
+        if [[ "${YAML_KEYS[$i]}" == "$key" ]]; then
+            YAML_VALUES[$i]="$value"
+            return
+        fi
+        ((i++))
+    done
+    
+    # Add new key-value pair
+    YAML_KEYS[${#YAML_KEYS[@]}]="$key"
+    YAML_VALUES[${#YAML_VALUES[@]}]="$value"
+}
 
-# Function to parse YAML content
+# Function to get value by key
+yaml_get() {
+    local key="$1"
+    local i=0
+    
+    while [[ $i -lt ${#YAML_KEYS[@]} ]]; do
+        if [[ "${YAML_KEYS[$i]}" == "$key" ]]; then
+            echo "${YAML_VALUES[$i]}"
+            return
+        fi
+        ((i++))
+    done
+}
+
+# Function to get all keys matching a pattern
+yaml_keys_matching() {
+    local pattern="$1"
+    local i=0
+    
+    while [[ $i -lt ${#YAML_KEYS[@]} ]]; do
+        if [[ "${YAML_KEYS[$i]}" =~ $pattern ]]; then
+            echo "${YAML_KEYS[$i]}"
+        fi
+        ((i++))
+    done
+}
+
+# Function to parse YAML content with proper indentation handling
 parse_yaml() {
     local input="$1"
     local prefix="$2"
-    local s='[[:space:]]*'
-    local w='[a-zA-Z0-9_-]*'
-    local fs=$(echo @|tr @ '\034')
     
     # Clear previous data
-    YAML_DATA=()
-    YAML_PREFIX="$prefix"
+    YAML_KEYS=()
+    YAML_VALUES=()
+    
+    local line_number=0
+    local current_update_index=-1
+    local current_reviewer_index=0
+    local current_directory_index=0
+    local in_reviewers_section=false
+    local in_directories_section=false
+    local reviewers_indent=0
+    local directories_indent=0
     
     # Process YAML line by line
     while IFS= read -r line; do
+        ((line_number++))
+        
+        # Safety check to prevent infinite loops
+        if [[ $line_number -gt 1000 ]]; then
+            break
+        fi
+        
         # Skip empty lines and comments
         [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
         
-        # Handle arrays and objects
-        if [[ "$line" =~ ^($s)*-($s)*(.*)$ ]]; then
-            # Array item
-            local indent="${BASH_REMATCH[1]}"
-            local value="${BASH_REMATCH[3]}"
-            local array_index=$(get_array_index "$prefix")
+        # Get indentation level
+        local indent=""
+        if [[ "$line" =~ ^([[:space:]]*) ]]; then
+            indent="${BASH_REMATCH[1]}"
+        fi
+        local indent_level=${#indent}
+        
+        # Trim the line
+        local trimmed_line="${line#"${line%%[![:space:]]*}"}"
+        
+        # Handle array items starting with "-"
+        if [[ "$trimmed_line" =~ ^-[[:space:]]*(.*)$ ]]; then
+            local value="${BASH_REMATCH[1]}"
             
-            if [[ "$value" =~ ^([^:]+):(.*)$ ]]; then
-                # Object in array
-                local key="${BASH_REMATCH[1]// /}"
+            # Check if this is a top-level updates array item
+            if [[ $indent_level -eq 0 && "$value" =~ ^package-ecosystem: ]]; then
+                # New update entry
+                ((current_update_index++))
+                current_reviewer_index=0
+                current_directory_index=0
+                in_reviewers_section=false
+                in_directories_section=false
+                
+                # Extract package-ecosystem value
+                if [[ "$value" =~ ^package-ecosystem:[[:space:]]*[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                    local ecosystem="${BASH_REMATCH[1]}"
+                    yaml_set "updates.${current_update_index}.package-ecosystem" "$ecosystem"
+                fi
+            elif [[ "$in_reviewers_section" == true && $indent_level -eq $reviewers_indent ]]; then
+                # Reviewer item
+                value="${value#"${value%%[![:space:]]*}"}" # trim leading whitespace
+                value="${value%"${value##*[![:space:]]}"}" # trim trailing whitespace
+                
+                # Remove quotes if present
+                if [[ "$value" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                    value="${BASH_REMATCH[1]}"
+                fi
+                
+                if [[ -n "$value" ]]; then
+                    yaml_set "updates.${current_update_index}.reviewers.${current_reviewer_index}" "$value"
+                    ((current_reviewer_index++))
+                fi
+            elif [[ "$in_directories_section" == true && $indent_level -eq $directories_indent ]]; then
+                # Directory item
+                value="${value#"${value%%[![:space:]]*}"}" # trim leading whitespace
+                value="${value%"${value##*[![:space:]]}"}" # trim trailing whitespace
+                
+                # Remove quotes if present
+                if [[ "$value" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                    value="${BASH_REMATCH[1]}"
+                fi
+                
+                if [[ -n "$value" ]]; then
+                    yaml_set "updates.${current_update_index}.directories.${current_directory_index}" "$value"
+                    ((current_directory_index++))
+                fi
+            elif [[ "$value" =~ ^([^:]+):[[:space:]]*(.*)$ ]]; then
+                # Object property in array item
+                local key="${BASH_REMATCH[1]}"
                 local val="${BASH_REMATCH[2]}"
+                
+                # Clean up key and value
+                key="${key// /}"
                 val="${val#"${val%%[![:space:]]*}"}" # trim leading whitespace
                 val="${val%"${val##*[![:space:]]}"}" # trim trailing whitespace
                 
                 # Remove quotes if present
-                if [[ "$val" =~ ^\"(.*)\"$ || "$val" =~ ^\'(.*)\'$ ]]; then
+                if [[ "$val" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
                     val="${BASH_REMATCH[1]}"
                 fi
                 
-                YAML_DATA["${prefix}${array_index}.${key}"]="$val"
-            else
-                # Simple array item
-                val="${value#"${value%%[![:space:]]*}"}" # trim leading whitespace
-                val="${value%"${value##*[![:space:]]}"}" # trim trailing whitespace
-                
-                # Remove quotes if present
-                if [[ "$val" =~ ^\"(.*)\"$ || "$val" =~ ^\'(.*)\'$ ]]; then
-                    val="${BASH_REMATCH[1]}"
+                if [[ -n "$val" && $current_update_index -ge 0 ]]; then
+                    yaml_set "updates.${current_update_index}.${key}" "$val"
                 fi
-                
-                YAML_DATA["${prefix}${array_index}"]="$val"
             fi
-        elif [[ "$line" =~ ^($s)*([^:]+):(.*)$ ]]; then
-            # Key-value pair
-            local indent="${BASH_REMATCH[1]}"
-            local key="${BASH_REMATCH[2]}"
-            local value="${BASH_REMATCH[3]}"
+        elif [[ "$trimmed_line" =~ ^([^:]+):[[:space:]]*(.*)$ ]]; then
+            # Regular key-value pair
+            local key="${BASH_REMATCH[1]}"
+            local value="${BASH_REMATCH[2]}"
             
             # Clean up key and value
             key="${key// /}"
@@ -113,39 +215,121 @@ parse_yaml() {
             value="${value%"${value##*[![:space:]]}"}" # trim trailing whitespace
             
             # Remove quotes if present
-            if [[ "$value" =~ ^\"(.*)\"$ || "$value" =~ ^\'(.*)\'$ ]]; then
+            if [[ "$value" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
                 value="${BASH_REMATCH[1]}"
             fi
             
-            # Handle nested structures
-            if [[ -n "$value" ]]; then
-                YAML_DATA["${prefix}${key}"]="$value"
+            # Handle special cases
+            if [[ "$key" == "reviewers" ]]; then
+                in_reviewers_section=true
+                in_directories_section=false
+                reviewers_indent=$((indent_level + 2)) # Expecting reviewers to be indented 2 spaces more
+                current_reviewer_index=0
+                # If there's a value on the same line, it's likely an error or single-line format
+                if [[ -n "$value" ]]; then
+                    # Handle inline array format like "reviewers: [user1, user2]"
+                    if [[ "$value" =~ ^\[.*\]$ ]]; then
+                        value="${value:1:-1}" # Remove [ ]
+                        local old_ifs="$IFS"
+                        IFS=','
+                        local reviewers_array=($value)
+                        IFS="$old_ifs"
+                        for reviewer in "${reviewers_array[@]}"; do
+                            reviewer="${reviewer#"${reviewer%%[![:space:]]*}"}" # trim leading whitespace
+                            reviewer="${reviewer%"${reviewer##*[![:space:]]}"}" # trim trailing whitespace
+                            if [[ "$reviewer" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                                reviewer="${BASH_REMATCH[1]}"
+                            fi
+                            if [[ -n "$reviewer" ]]; then
+                                yaml_set "updates.${current_update_index}.reviewers.${current_reviewer_index}" "$reviewer"
+                                ((current_reviewer_index++))
+                            fi
+                        done
+                        in_reviewers_section=false
+                    fi
+                fi
+            elif [[ "$key" == "directories" ]]; then
+                # Handle directories array
+                in_directories_section=true
+                in_reviewers_section=false
+                directories_indent=$((indent_level + 2)) # Expecting directories to be indented 2 spaces more
+                current_directory_index=0
+                if [[ -n "$value" ]]; then
+                    # Handle inline array format
+                    if [[ "$value" =~ ^\[.*\]$ ]]; then
+                        value="${value:1:-1}" # Remove [ ]
+                        local old_ifs="$IFS"
+                        IFS=','
+                        local dirs_array=($value)
+                        IFS="$old_ifs"
+                        for dir in "${dirs_array[@]}"; do
+                            dir="${dir#"${dir%%[![:space:]]*}"}" # trim leading whitespace
+                            dir="${dir%"${dir##*[![:space:]]}"}" # trim trailing whitespace
+                            if [[ "$dir" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                                dir="${BASH_REMATCH[1]}"
+                            fi
+                            if [[ -n "$dir" ]]; then
+                                yaml_set "updates.${current_update_index}.directories.${current_directory_index}" "$dir"
+                                ((current_directory_index++))
+                            fi
+                        done
+                        in_directories_section=false
+                    fi
+                fi
+            else
+                # Regular key-value pair
+                if [[ -n "$value" && $current_update_index -ge 0 ]]; then
+                    yaml_set "updates.${current_update_index}.${key}" "$value"
+                fi
+                
+                # Reset sections if we encounter a different key at the same or lower indent level
+                if [[ "$in_reviewers_section" == true && $indent_level -le $((reviewers_indent - 2)) ]]; then
+                    in_reviewers_section=false
+                fi
+                if [[ "$in_directories_section" == true && $indent_level -le $((directories_indent - 2)) ]]; then
+                    in_directories_section=false
+                fi
+            fi
+        elif [[ "$in_reviewers_section" == true && -n "$trimmed_line" ]]; then
+            # Handle reviewers that might not start with "-" (malformed YAML)
+            local reviewer="$trimmed_line"
+            
+            # Remove quotes if present
+            if [[ "$reviewer" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                reviewer="${BASH_REMATCH[1]}"
+            fi
+            
+            if [[ -n "$reviewer" ]]; then
+                yaml_set "updates.${current_update_index}.reviewers.${current_reviewer_index}" "$reviewer"
+                ((current_reviewer_index++))
+            fi
+        elif [[ "$in_directories_section" == true && -n "$trimmed_line" ]]; then
+            # Handle directories that might not start with "-" (malformed YAML)
+            local directory="$trimmed_line"
+            
+            # Remove quotes if present
+            if [[ "$directory" =~ ^[\"\']*([^\"\']*)[\"\']*$ ]]; then
+                directory="${BASH_REMATCH[1]}"
+            fi
+            
+            if [[ -n "$directory" ]]; then
+                yaml_set "updates.${current_update_index}.directories.${current_directory_index}" "$directory"
+                ((current_directory_index++))
             fi
         fi
     done <<< "$input"
 }
 
-# Helper function to get next array index
-get_array_index() {
-    local prefix="$1"
-    local max_index=-1
-    
-    for key in "${!YAML_DATA[@]}"; do
-        if [[ "$key" =~ ^${prefix}([0-9]+) ]]; then
-            local index="${BASH_REMATCH[1]}"
-            if [[ $index -gt $max_index ]]; then
-                max_index=$index
-            fi
-        fi
-    done
-    
-    echo $((max_index + 1))
-}
-
-# Function to get YAML value by path
+# Function to get YAML value by path (compatible with new array-based approach)
 get_yaml_value() {
     local path="$1"
-    echo "${YAML_DATA[$path]:-}"
+    yaml_get "$path"
+}
+
+# Function to get all keys matching a pattern (compatible with new array-based approach)
+get_yaml_keys() {
+    local pattern="$1"
+    yaml_keys_matching "$pattern"
 }
 
 # Function to get all keys matching a pattern
@@ -159,189 +343,32 @@ get_yaml_keys() {
 }
 
 # ============================================================================
-# EMBEDDED JSON PARSER (Pure Bash Implementation)
+# EMBEDDED JSON PARSER (Pure Bash Implementation - Compatible with Bash 3.2+)
 # ============================================================================
 
-# Global variables for JSON parsing
-declare -A JSON_DATA
-JSON_PREFIX=""
+# Note: This is a fallback parser for JSON, but the main focus is YAML parsing
+# For bash 3.2 compatibility, we use the same array-based approach
 
-# Function to parse JSON content
+# Function to parse basic JSON (simplified for basic use cases)
 parse_json() {
     local input="$1"
     local prefix="$2"
     
-    # Clear previous data
-    JSON_DATA=()
-    JSON_PREFIX="$prefix"
-    
-    # Simple JSON parser - handles basic objects and arrays
-    # Remove whitespace and newlines for easier parsing
-    local cleaned_json
-    cleaned_json=$(echo "$input" | tr -d '\n\r' | sed 's/[[:space:]]\+/ /g')
-    
-    # Parse the JSON structure
-    parse_json_recursive "$cleaned_json" "$prefix"
+    # For now, we'll focus on YAML parsing as the primary method
+    # This is a placeholder for potential JSON fallback support
+    echo "JSON parsing not implemented in this version - use YAML format"
 }
 
-# Recursive JSON parser
-parse_json_recursive() {
-    local json="$1"
-    local current_prefix="$2"
-    
-    # Remove outer braces/brackets
-    json="${json#"${json%%[![:space:]]*}"}" # trim leading whitespace
-    json="${json%"${json##*[![:space:]]}"}" # trim trailing whitespace
-    
-    if [[ "$json" =~ ^\{.*\}$ ]]; then
-        # Object
-        json="${json:1:-1}" # Remove { }
-        parse_json_object "$json" "$current_prefix"
-    elif [[ "$json" =~ ^\[.*\]$ ]]; then
-        # Array
-        json="${json:1:-1}" # Remove [ ]
-        parse_json_array "$json" "$current_prefix"
-    fi
-}
-
-# Parse JSON object
-parse_json_object() {
-    local content="$1"
-    local prefix="$2"
-    
-    # Split by commas (simplified - doesn't handle nested objects perfectly)
-    local item
-    local in_quotes=false
-    local brace_count=0
-    local bracket_count=0
-    local current_item=""
-    
-    while IFS= read -r -n1 char; do
-        if [[ "$char" == '"' && "${current_item: -1}" != '\' ]]; then
-            in_quotes=$(!$in_quotes)
-        elif [[ "$in_quotes" == false ]]; then
-            if [[ "$char" == '{' ]]; then
-                ((brace_count++))
-            elif [[ "$char" == '}' ]]; then
-                ((brace_count--))
-            elif [[ "$char" == '[' ]]; then
-                ((bracket_count++))
-            elif [[ "$char" == ']' ]]; then
-                ((bracket_count--))
-            elif [[ "$char" == ',' && $brace_count -eq 0 && $bracket_count -eq 0 ]]; then
-                parse_json_item "$current_item" "$prefix"
-                current_item=""
-                continue
-            fi
-        fi
-        current_item+="$char"
-    done <<< "$content"
-    
-    # Handle last item
-    if [[ -n "$current_item" ]]; then
-        parse_json_item "$current_item" "$prefix"
-    fi
-}
-
-# Parse JSON array
-parse_json_array() {
-    local content="$1"
-    local prefix="$2"
-    local index=0
-    
-    # Similar to object parsing but with array indices
-    local in_quotes=false
-    local brace_count=0
-    local bracket_count=0
-    local current_item=""
-    
-    while IFS= read -r -n1 char; do
-        if [[ "$char" == '"' && "${current_item: -1}" != '\' ]]; then
-            in_quotes=$(!$in_quotes)
-        elif [[ "$in_quotes" == false ]]; then
-            if [[ "$char" == '{' ]]; then
-                ((brace_count++))
-            elif [[ "$char" == '}' ]]; then
-                ((brace_count--))
-            elif [[ "$char" == '[' ]]; then
-                ((bracket_count++))
-            elif [[ "$char" == ']' ]]; then
-                ((bracket_count--))
-            elif [[ "$char" == ',' && $brace_count -eq 0 && $bracket_count -eq 0 ]]; then
-                parse_json_array_item "$current_item" "$prefix" "$index"
-                current_item=""
-                ((index++))
-                continue
-            fi
-        fi
-        current_item+="$char"
-    done <<< "$content"
-    
-    # Handle last item
-    if [[ -n "$current_item" ]]; then
-        parse_json_array_item "$current_item" "$prefix" "$index"
-    fi
-}
-
-# Parse individual JSON item (key-value pair)
-parse_json_item() {
-    local item="$1"
-    local prefix="$2"
-    
-    # Remove leading/trailing whitespace
-    item="${item#"${item%%[![:space:]]*}"}"
-    item="${item%"${item##*[![:space:]]}"}"
-    
-    # Split on first colon
-    if [[ "$item" =~ ^\"([^\"]+)\"[[:space:]]*:[[:space:]]*(.*)$ ]]; then
-        local key="${BASH_REMATCH[1]}"
-        local value="${BASH_REMATCH[2]}"
-        
-        # Clean up value
-        value="${value#"${value%%[![:space:]]*}"}"
-        value="${value%"${value##*[![:space:]]}"}"
-        
-        # Remove quotes from string values
-        if [[ "$value" =~ ^\"(.*)\"$ ]]; then
-            value="${BASH_REMATCH[1]}"
-        fi
-        
-        JSON_DATA["${prefix}${key}"]="$value"
-    fi
-}
-
-# Parse JSON array item
-parse_json_array_item() {
-    local item="$1"
-    local prefix="$2"
-    local index="$3"
-    
-    # Remove leading/trailing whitespace
-    item="${item#"${item%%[![:space:]]*}"}"
-    item="${item%"${item##*[![:space:]]}"}"
-    
-    # Remove quotes from string values
-    if [[ "$item" =~ ^\"(.*)\"$ ]]; then
-        item="${BASH_REMATCH[1]}"
-    fi
-    
-    JSON_DATA["${prefix}${index}"]="$item"
-}
-
-# Function to get JSON value by path
+# Function to get JSON value by path (placeholder)
 get_json_value() {
     local path="$1"
-    echo "${JSON_DATA[$path]:-}"
+    echo ""
 }
 
-# Function to get all keys matching a pattern
+# Function to get all keys matching a pattern (placeholder)
 get_json_keys() {
     local pattern="$1"
-    for key in "${!JSON_DATA[@]}"; do
-        if [[ "$key" =~ $pattern ]]; then
-            echo "$key"
-        fi
-    done
+    echo ""
 }
 
 # ============================================================================
@@ -528,6 +555,7 @@ parse_dependabot_yml() {
     while true; do
         local ecosystem_key="updates.${update_index}.package-ecosystem"
         local directory_key="updates.${update_index}.directory"
+        local directories_key="updates.${update_index}.directories"
         local reviewers_key="updates.${update_index}.reviewers"
         
         local ecosystem
@@ -540,45 +568,65 @@ parse_dependabot_yml() {
         # Check if this update has reviewers
         local has_reviewers=false
         local reviewer_index=0
+        local all_reviewers=()
+        
         while true; do
             local reviewer
             reviewer=$(get_yaml_value "${reviewers_key}.${reviewer_index}")
             if [[ -n "$reviewer" ]]; then
                 has_reviewers=true
+                all_reviewers+=("$reviewer")
+                ((reviewer_index++))
+            else
                 break
             fi
-            ((reviewer_index++))
             if [[ $reviewer_index -gt 50 ]]; then  # Safety limit
                 break
             fi
         done
         
         if [[ "$has_reviewers" == true ]]; then
+            # Check for single directory
             local directory
             directory=$(get_yaml_value "$directory_key")
-            if [[ -z "$directory" ]]; then
-                directory="/"
-            fi
             
-            # Collect all reviewers for this update
-            local reviewers=()
-            reviewer_index=0
+            # Check for multiple directories (directories field)
+            local has_directories=false
+            local dir_index=0
+            local all_directories=()
+            
             while true; do
-                local reviewer
-                reviewer=$(get_yaml_value "${reviewers_key}.${reviewer_index}")
-                if [[ -n "$reviewer" ]]; then
-                    reviewers+=("$reviewer")
+                local dir
+                dir=$(get_yaml_value "${directories_key}.${dir_index}")
+                if [[ -n "$dir" ]]; then
+                    has_directories=true
+                    all_directories+=("$dir")
+                    ((dir_index++))
                 else
                     break
                 fi
-                ((reviewer_index++))
-                if [[ $reviewer_index -gt 50 ]]; then  # Safety limit
+                if [[ $dir_index -gt 50 ]]; then  # Safety limit
                     break
                 fi
             done
             
-            # Store update information
-            updates_with_reviewers+=("$ecosystem|$directory|${reviewers[*]}")
+            # If no directory specified, default to root
+            if [[ -z "$directory" && "$has_directories" == false ]]; then
+                directory="/"
+            fi
+            
+            # Format reviewers as space-separated string
+            local reviewers_string="${all_reviewers[*]}"
+            
+            if [[ "$has_directories" == true ]]; then
+                # Handle multiple directories
+                for dir in "${all_directories[@]}"; do
+                    updates_with_reviewers+=("$ecosystem|$dir|$reviewers_string")
+                done
+            else
+                # Handle single directory
+                updates_with_reviewers+=("$ecosystem|$directory|$reviewers_string")
+            fi
         fi
         
         ((update_index++))
@@ -588,7 +636,9 @@ parse_dependabot_yml() {
     done
     
     # Output in format that can be easily processed
-    printf '%s\n' "${updates_with_reviewers[@]}"
+    if [[ ${#updates_with_reviewers[@]} -gt 0 ]]; then
+        printf '%s\n' "${updates_with_reviewers[@]}"
+    fi
 }
 
 # Function to find existing CODEOWNERS file
@@ -680,7 +730,9 @@ main() {
     temp_file=$(mktemp)
     
     # Extract updates with reviewers
-    parse_dependabot_yml "$dependabot_file" > "$temp_file"
+    local parse_output
+    parse_output=$(parse_dependabot_yml "$dependabot_file")
+    echo "$parse_output" > "$temp_file"
     
     if [[ ! -s "$temp_file" ]]; then
         print_warning "No reviewers found in dependabot.yml!"
@@ -701,9 +753,14 @@ main() {
         
         # Get manifest patterns for this ecosystem
         local manifest_patterns=()
+        local temp_patterns
+        temp_patterns=$(get_manifest_files_for_ecosystem "$ecosystem" "$directory")
+        
         while IFS= read -r pattern; do
-            manifest_patterns+=("$pattern")
-        done < <(get_manifest_files_for_ecosystem "$ecosystem" "$directory")
+            if [[ -n "$pattern" ]]; then
+                manifest_patterns+=("$pattern")
+            fi
+        done <<< "$temp_patterns"
         
         if [[ ${#manifest_patterns[@]} -eq 0 ]]; then
             print_warning "No manifest patterns found for ecosystem: $ecosystem"
@@ -736,9 +793,14 @@ main() {
     
     # Sort the new reviewer lines
     local sorted_lines=()
+    local temp_sorted
+    temp_sorted=$(printf '%s\n' "${new_reviewers_lines[@]}" | sort_codeowners_lines)
+    
     while IFS= read -r line; do
-        sorted_lines+=("$line")
-    done < <(printf '%s\n' "${new_reviewers_lines[@]}" | sort_codeowners_lines)
+        if [[ -n "$line" ]]; then
+            sorted_lines+=("$line")
+        fi
+    done <<< "$temp_sorted"
     
     # Read existing CODEOWNERS content
     local codeowners_content=""
@@ -767,18 +829,31 @@ main() {
     if [[ "$section_exists" == "true" ]]; then
         print_info "Updating existing Dependabot reviewers section..."
         
-        # Always recreate the section (simpler and more reliable)
+        # Create a new file by reconstructing it properly
         local temp_without_section
         temp_without_section=$(mktemp)
         
-        # Copy lines before the section
+        # Copy lines before the Dependabot section
         if [[ $section_line_num -gt 1 ]]; then
-            sed -n "1,$((section_line_num - 1))p" "$temp_codeowners" > "$temp_without_section"
+            head -n $((section_line_num - 1)) "$temp_codeowners" > "$temp_without_section"
         fi
         
-        # Add the new section
+        # Add the new Dependabot section
         echo "$dependabot_section" >> "$temp_without_section"
         printf '%s\n' "${sorted_lines[@]}" >> "$temp_without_section"
+        
+        # Find and copy any content after the current Dependabot section
+        # Look for the next comment section or end of file
+        local next_section_line
+        next_section_line=$(awk -v start="$section_line_num" '
+            NR > start && /^[[:space:]]*#/ && !/# Dependabot reviewers/ { print NR; exit }
+        ' "$temp_codeowners")
+        
+        if [[ -n "$next_section_line" && "$next_section_line" =~ ^[0-9]+$ ]]; then
+            # There's content after the Dependabot section
+            echo "" >> "$temp_without_section"  # Add blank line
+            tail -n +$next_section_line "$temp_codeowners" >> "$temp_without_section"
+        fi
         
         # Replace the temp file
         mv "$temp_without_section" "$temp_codeowners"
