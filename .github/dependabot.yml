@@ -1,91 +1,207 @@
 version: 2
 updates:
-- package-ecosystem: "npm"
-  directory: "/6"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "abhishekbhaskar"
-- package-ecosystem: "pub"
-  directories:
-    - "/1/frontend/"
-    - "/2/backend/"
-    - "/1/libs-*"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "sachin-sandhu"
-    - "kbukum1"
-- package-ecosystem: "elm"
-  directory: "/2"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "randhircs"
-- package-ecosystem: "dotnet-sdk"
-  directory: "/7"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "markhallen"
-- package-ecosystem: "pub"
-  directory: "/4"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "kbukum11"
-- package-ecosystem: "pub"
-  directory: "/5"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "robaiken"
-    - "sachin-sandhu"
-- package-ecosystem: "docker"
-  directory: "/"
-  schedule:
-    interval: "cron"
-    cronjob: "0 8 * * 2,7"
-  open-pull-requests-limit: 10
-  groups:
-    typescript-eslint:
-      patterns:
-      - "@typescript-eslint/*"
-  reviewers: 
-    - "thavaahariharangit"
+  - package-ecosystem: "bundler"
+    directories:
+      - "/updater"
+      - "/"
+    reviewers:
+      - "dependabot-test-user"
+      - "dependabot-team"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    groups:
+      sorbet:
+        patterns:
+          - "*-sorbet"
+          - "sorbet-*"
+          - "sorbet"
+          - "tapioca"
+      aws-sdk:
+        patterns:
+          - "aws-sdk-*"
+      prod-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Watch the per-ecosystem native helpers
+  - package-ecosystem: "composer"
+    directories:
+      - "/composer/helpers/v2"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user1"
+      - "dependabot-team2"
+    groups:
+      prod-dependencies:
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+  - package-ecosystem: "devcontainers"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user2"
+      - "dependabot-team2"
+  - package-ecosystem: "docker"
+    directories:
+      - "/"
+      - "/go_modules"
+      - "/cargo"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user3"
+      - "dependabot-team3"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user4"
+      - "dependabot-team4"
+    groups:
+      all-actions:
+        patterns: [ "*" ]
+  - package-ecosystem: "gomod"
+    directory: "/go_modules/helpers"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user5"
+      - "dependabot-team5"
+  - package-ecosystem: "mix"
+    directory: "/hex/helpers"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user7"
+      - "dependabot-team7"
+  - package-ecosystem: "npm"
+    directory: "/npm_and_yarn/helpers"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user6"
+      - "dependabot-team6"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "@npmcli/arborist"
+          - "nock"
+          - "npm"
+          - "semver"
+        exclude-patterns:
+          - "detect-indent"  # temp excluded due to https://github.com/dependabot/dependabot-core/pull/5683#issuecomment-1243468605
+      yarn-dependencies:
+        patterns:
+          - "dependabot/yarn-lib"
+      pnpm-dependencies:
+        patterns:
+          - "@pnpm/lockfile-file"
+          - "@pnpm/dependency-path"
+      dev-dependencies:
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "npm"
+        update-types: [ "version-update:semver-major" ]
+  - package-ecosystem: "pip"
+    directory: "/python/helpers"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user11"
+      - "dependabot-team11"
+    groups:
+      common:
+        patterns:
+          - hashin
+          - cython
+          - flake8
+      # Keep the package managers themselves separate because they are higher risk
+      # and also higher visibility--ie, users generally want latest, so we don't
+      # want breakage in the `common` group to prevent updating package manager versions
+      pip:
+        patterns:
+          - pip
+      pip-tools:
+        patterns:
+          - pip-tools
+      pipenv:
+        patterns:
+          - pipfile
+          - pipenv
+      poetry:
+        patterns:
+          - poetry
+  - package-ecosystem: "pub"
+    directory: "/pub/helpers"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user10"
+      - "dependabot-team10"
+  - package-ecosystem: "nuget"
+    directory: "/nuget/helpers/lib/NuGetUpdater"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user8"
+      - "dependabot-team8"
+  - package-ecosystem: "dotnet-sdk"
+    directory: "/nuget/helpers/lib/NuGetUpdater"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user12"
+      - "dependabot-team12"
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "16:00"
+    reviewers:
+      - "dependabot-test-user9"
+      - "dependabot-team9"
