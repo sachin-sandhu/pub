@@ -1,40 +1,77 @@
 
 # Dependabot reviewers (migrated from .github/dependabot.yml)
-/*.dockerfile @thavaahariharangit
-/4/pubspec.lock @kbukum1
-/4/pubspec.yaml @kbukum1
-/4/pubspec.yml @kbukum1
-/5/pubspec.lock @robaiken
-/5/pubspec.yaml @robaiken
-/5/pubspec.yml @robaiken
-/6/npm-shrinkwrap.json @abhishekbhaskar
-/6/package-lock.json @abhishekbhaskar
-/6/package.json @abhishekbhaskar1
-/6/pnpm-lock.yaml @abhishekbhaskar
-/6/yarn.lock @abhishekbhaskar
-/5/pubspec.lock @robaiken1
-/5/pubspec.yaml @robaiken1
-/5/pubspec.yml @robaiken1
-/7/global.json @markhallen
-/7/packages.config @markhallen
-/1/frontend/pubspec.lock @sachin-sandhu @kbukum12
-/1/frontend/pubspec.yaml @sachin-sandhu @kbukum1
-/1/frontend/pubspec.yml @sachin-sandhu @kbukum1
-/2/backend/pubspec.lock @sachin-sandhu @kbukum1
-/2/backend/pubspec.yaml @sachin-sandhu @kbukum1
-/2/backend/pubspec.yml @sachin-sandhu @kbukum1
-/Dockerfile @thavaahariharangit
-/Dockerfile.* @thavaahariharangit
-/7/*.csproj @markhallen
-/7/*.fsproj @markhallen
-/7/*.sln @markhallen
-/7/*.vbproj @markhallen
-/1/libs-*/pubspec.lock @sachin-sandhu @kbukum1
-/1/libs-*/pubspec.yaml @sachin-sandhu @kbukum1
-/1/libs-*/pubspec.yml @sachin-sandhu @kbukum1
-/**/*.dockerfile @thavaahariharangit
-/**/Dockerfile.* @thavaahariharangit
-/7/**/*.csproj @markhallen
-/7/**/*.fsproj @markhallen
-/7/**/*.sln @markhallen
-/7/**/*.vbproj @markhallen
+/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/*.gemspec @dependabot-test-user @dependabot-team
+/.devcontainer.json @dependabot-test-user2 @dependabot-team2
+/.gitmodules @dependabot-test-user9 @dependabot-team9
+/Gemfile.lock @dependabot-test-user @dependabot-team
+/action.yaml @dependabot-test-user4 @dependabot-team4
+/action.yml @dependabot-test-user4 @dependabot-team4
+/.devcontainer/devcontainer.json @dependabot-test-user2 @dependabot-team2
+/updater/Gemfile.lock @dependabot-test-user @dependabot-team
+/go_modules/helpers/go.mod @dependabot-test-user5 @dependabot-team5
+/go_modules/helpers/go.sum @dependabot-test-user5 @dependabot-team5
+/hex/helpers/mix.exs @dependabot-test-user7 @dependabot-team7
+/hex/helpers/mix.lock @dependabot-test-user7 @dependabot-team7
+/npm_and_yarn/helpers/npm-shrinkwrap.json @dependabot-test-user6 @dependabot-team6
+/npm_and_yarn/helpers/package-lock.json @dependabot-test-user6 @dependabot-team6
+/npm_and_yarn/helpers/package.json @dependabot-test-user6 @dependabot-team6
+/npm_and_yarn/helpers/pnpm-lock.yaml @dependabot-test-user6 @dependabot-team6
+/npm_and_yarn/helpers/yarn.lock @dependabot-test-user6 @dependabot-team6
+/pub/helpers/pubspec.lock @dependabot-test-user10 @dependabot-team10
+/pub/helpers/pubspec.yaml @dependabot-test-user10 @dependabot-team10
+/pub/helpers/pubspec.yml @dependabot-test-user10 @dependabot-team10
+/python/helpers/Pipfile.lock @dependabot-test-user11 @dependabot-team11
+/python/helpers/pyproject.toml @dependabot-test-user11 @dependabot-team11
+/python/helpers/requirements.txt @dependabot-test-user11 @dependabot-team11
+/python/helpers/setup.cfg @dependabot-test-user11 @dependabot-team11
+/python/helpers/setup.py @dependabot-test-user11 @dependabot-team11
+/composer/helpers/v2/composer.json @dependabot-test-user1 @dependabot-team2
+/composer/helpers/v2/composer.lock @dependabot-test-user1 @dependabot-team2
+/nuget/helpers/lib/NuGetUpdater/Directory.Build.props @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/Directory.Packages.props @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/global.json @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/packages.config @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/packages.config @dependabot-test-user12 @dependabot-team12
+/Dockerfile @dependabot-test-user3 @dependabot-team3
+/Gemfile @dependabot-test-user @dependabot-team
+/cargo/Dockerfile @dependabot-test-user3 @dependabot-team3
+/go_modules/Dockerfile @dependabot-test-user3 @dependabot-team3
+/updater/Gemfile @dependabot-test-user @dependabot-team
+/python/helpers/Pipfile @dependabot-test-user11 @dependabot-team11
+/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/cargo/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/cargo/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/go_modules/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/go_modules/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/updater/*.gemspec @dependabot-test-user @dependabot-team
+/.github/workflows/*.yaml @dependabot-test-user4 @dependabot-team4
+/.github/workflows/*.yml @dependabot-test-user4 @dependabot-team4
+/python/helpers/requirements/*.txt @dependabot-test-user11 @dependabot-team11
+/nuget/helpers/lib/NuGetUpdater/*.csproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/*.csproj @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/*.fsproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/*.fsproj @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/*.sln @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/*.sln @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/*.vbproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/*.vbproj @dependabot-test-user12 @dependabot-team12
+/**/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/**/*.gemspec @dependabot-test-user @dependabot-team
+/**/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/cargo/**/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/cargo/**/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/go_modules/**/*.dockerfile @dependabot-test-user3 @dependabot-team3
+/go_modules/**/Dockerfile.* @dependabot-test-user3 @dependabot-team3
+/updater/**/*.gemspec @dependabot-test-user @dependabot-team
+/**/.github/workflows/*.yaml @dependabot-test-user4 @dependabot-team4
+/**/.github/workflows/*.yml @dependabot-test-user4 @dependabot-team4
+/python/helpers/**/requirements/*.txt @dependabot-test-user11 @dependabot-team11
+/nuget/helpers/lib/NuGetUpdater/**/*.csproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/**/*.csproj @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/**/*.fsproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/**/*.fsproj @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/**/*.sln @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/**/*.sln @dependabot-test-user12 @dependabot-team12
+/nuget/helpers/lib/NuGetUpdater/**/*.vbproj @dependabot-test-user8 @dependabot-team8
+/nuget/helpers/lib/NuGetUpdater/**/*.vbproj @dependabot-test-user12 @dependabot-team12
