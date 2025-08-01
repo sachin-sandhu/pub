@@ -1,4 +1,4 @@
-name: Migrate Dependabot Reviewers to CODEOWNERS
+name: Migrate Dependabot Reviewers to CODEOWNERS1
 
 on:
   workflow_dispatch:
